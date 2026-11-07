@@ -86,7 +86,7 @@ body.cine.tour #phase{display:block!important;top:8vh;bottom:auto;left:22vw;righ
  <ol>
   <li>The map opens on the preparation. Choose another part in the panel at the bottom, or press <b>Next ▶</b>.</li>
   <li>Press <b>▶ Play</b>. With <b>Guided camera</b> ticked, the camera flies to the important places and a card explains what is happening. Some moments pause on their own; press <b>Continue</b>.</li>
-  <li>Click the map at any time to take the camera yourself: drag to turn, right-drag to slide, scroll to zoom. Tick <b>Guided camera</b> to give it back.</li>
+  <li>Drag or scroll on the map at any time to take the camera yourself: drag to turn, right-drag to slide, scroll to zoom. Clicking a battery or a label does not take the camera. Tick <b>Guided camera</b> to give it back.</li>
   <li>Click any gun battery to see its range and how accurate it is.</li>
  </ol>
  <p class="small">Blue ground is held by the Canadians, red by the Germans. Orange bands are the barrage. Figures marked <i>model</i> or <i>illustrative</i> are estimates, not 1917 records. If it runs slowly, tick <b>Low detail</b> on the left.</p>
@@ -1459,7 +1459,12 @@ document.getElementById('srcList').innerHTML=SOURCES.map(([t,u])=>`<div><a href=
 
 function setMouse(e){ const r=canvasEl.getBoundingClientRect(); mouse.x=(e.clientX-r.left)/r.width*2-1; mouse.y=-(e.clientY-r.top)/r.height*2+1; ray.setFromCamera(mouse,camera); }
 function terrainHit(){ const h=ray.intersectObject(terrain,false)[0]; return h?[h.point.x/S,h.point.z/S]:null; }
-canvasEl.addEventListener('pointerdown',e=>{ if(tourOn&&playing&&!frozen){ setShotScene(null); tourOn=false; document.getElementById('tourB').checked=false; speed=userSpeed(); focusFB=false; renderCard(); log('Guided camera off — tick "Guided camera" to hand it back.'); }
+// the guided camera is handed over only when someone actually moves the camera (drag or scroll), not on a click
+function releaseTour(){ if(!(tourOn&&playing&&!frozen)) return; setShotScene(null); tourOn=false; document.getElementById('tourB').checked=false; speed=userSpeed(); focusFB=false; renderCard(); log('Guided camera off — tick "Guided camera" to hand it back.'); }
+let dragFrom=null; addEventListener('pointerup',()=>dragFrom=null);
+addEventListener('pointermove',e=>{ if(dragFrom&&e.buttons&&Math.hypot(e.clientX-dragFrom[0],e.clientY-dragFrom[1])>6){ dragFrom=null; releaseTour(); } });
+canvasEl.addEventListener('wheel',()=>releaseTour(),{passive:true});
+canvasEl.addEventListener('pointerdown',e=>{ dragFrom=[e.clientX,e.clientY];
   if(e.button!==0) return; setMouse(e);
   if(placing){ const p=terrainHit(); if(p){ const b=addBattery(placing,p[0],p[1],{}); select(b); recomputeReach(); } placing=null; controls.enabled=false; return; }
   if(selected&&selected.mission==='manual'&&(e.shiftKey||aimMode)){ const p=terrainHit(); if(p){ setAim(selected,p[0],p[1]); aimDrag=true; controls.enabled=false; } return; }
@@ -2489,7 +2494,7 @@ function cardHTML(){
   if(PH.shots) return cardX(curShot?curShot.id:PH.shots[0].id);
   const id=curShot?curShot.id:(PH.n===2?'p2over':'over'), F=FP.stats, B=FB.stats, b=FB.b;
   if(PH.n===2) return card2(id); if(PH.n===3) return card3(curShot?curShot.id:'p3over'); if(PH.n===4) return card4(curShot?curShot.id:'p4dusk');
-  if(id==='over') return `<h3>Guided view</h3><p>At zero hour the camera goes in close to a German front-line trench and its dugout in the 3rd Division's sector. Then it moves to a German battery under counter-battery fire, and finally pulls back to follow the barrage. Figures marked <i>model</i> are estimates from this simulation, not 1917 records. Click the map at any time to take back the camera.</p>`;
+  if(id==='over') return `<h3>Guided view</h3><p>At zero hour the camera goes in close to a German front-line trench and its dugout in the 3rd Division's sector. Then it moves to a German battery under counter-battery fire, and finally pulls back to follow the barrage. Figures marked <i>model</i> are estimates from this simulation, not 1917 records. Drag or scroll on the map at any time to take the camera.</p>`;
   if(id==='fp') return `<h3>German front trench · 3rd Division sector</h3>
    <p>Six sentries watch from the fire step. The rest of the platoon (40 men here, <i>illustrative</i>) shelter in a deep dugout cut into the chalk. Trenches were dug about 1.8 m deep.</p>
    <p>On 9 April there was one field gun for every 10 m of front. At the 18-pounder's sustained rate of 4 rounds per minute, that puts about ${FEAT_RPM} rounds per minute on this 60 m of trench for the 3 minutes before the first lift.</p>
@@ -2599,7 +2604,7 @@ let fpsN=0,fpsT=0,slowShown=false;
 function fpsWatch(dt){ if(slowShown||LOW) return; fpsN++; fpsT+=dt; if(fpsT>=6){ if(fpsN/fpsT<18){ slowShown=true; document.getElementById('slow').style.display='block'; } fpsN=0; fpsT=0; } }
 document.getElementById('slowLow').onclick=()=>{ const c=document.getElementById('tLow'); c.checked=true; c.onchange({target:c}); document.getElementById('slow').style.display='none'; };
 document.getElementById('slowNo').onclick=()=>{ document.getElementById('slow').style.display='none'; };
-if(CS.ok) document.getElementById('csCanvas').addEventListener('pointerdown',()=>{ if(FOL.active||frozen) return; setShotScene(null); tourOn=false; document.getElementById('tourB').checked=false; speed=userSpeed(); focusFB=false; renderCard(); log('Guided camera off — tick "Guided camera" to hand it back.'); });
+if(CS.ok) document.getElementById('csCanvas').addEventListener('pointerdown',e=>{ if(FOL.active||frozen) return; dragFrom=[e.clientX,e.clientY]; });
 renderPeople(); document.getElementById('folB').onclick=()=>{ document.getElementById('people').style.display='flex'; };
 document.getElementById('pplClose').onclick=()=>{ document.getElementById('people').style.display='none'; };
 // collapsible info boxes: small toggle in each box's top-right corner
