@@ -637,8 +637,8 @@ function objLine(P,color,name,w=9){ objGroup.push(ribbon(P,w,color,0.8)); { cons
 objLine(L_BLACK,0x111111,'BLACK LINE'); objLine(L_RED,0xd23a2a,'RED LINE'); objLine(L_BLUE,0x2f6fe0,'BLUE LINE'); objLine(L_BROWN,0x8a5a2b,'BROWN LINE');
 objGroup.push(ribbon(L_PIMPLE,8,0x222222,0.7)); addLabel('feat','The Pimple — 10th Cdn Inf Bde, 12 April',L_PIMPLE[2][0],L_PIMPLE[2][1],'obj',7);
 objGroup.push(ribbon(L_NB,10,0xffffff,0.5)); objGroup.push(ribbon(L_SB,10,0xffffff,0.5));
-addLabel('obj','Canadian Corps northern boundary',L_NB[0][0],L_NB[0][1],'obj').style.cssText+='background:rgba(0,0,0,.6);color:#fff';
-addLabel('obj','Canadian Corps southern boundary',L_SB[1][0],L_SB[1][1],'obj').style.cssText+='background:rgba(0,0,0,.6);color:#fff';
+addLabel('obj','Canadian Corps northern boundary',L_NB[0][0],L_NB[0][1],'obj').style.cssText+='color:#fff;font-style:normal';
+addLabel('obj','Canadian Corps southern boundary',L_SB[1][0],L_SB[1][1],'obj').style.cssText+='color:#fff;font-style:normal';
 // the brigade positions traced from the 1917 map mark each brigade's sector (they sit over the German lines, where the map prints them); the labels go behind the Canadian front line in that sector
 const BRIG_L=[], DIV_L=[];
 BRIGS.forEach(([n,bns,[x,z]])=>{ const s=sOfPt(x,z), p=gfAt(s), d=Math.abs(polyInfo(CF,p.x,p.z).d), q=offPt(s,-d-420); addLabel('div A',`${n}<br><span style="font-weight:400;font-size:10.5px">${bns}</span>`,q[0],q[1],'div'); const L=staticLabels[staticLabels.length-1]; L.x0=q[0]; L.z0=q[1]; BRIG_L.push(L); });
@@ -659,16 +659,21 @@ const SUBW=[]; const subGroup=[];
     for(let d=0;d<=w.L;d+=25){ const o=ex-d, lat=Math.sin(d/w.L*Math.PI)*bend*w.L*0.15; pts.push([p.x+p.nx*o-p.nz*lat, p.z+p.nz*o+p.nx*lat]); }
     w.pts=pts; w.exit=pts[0]; w.entry=pts[pts.length-1]; w.p=p; SUBW.push(w);
     // drawn as if seen through the ground: a faint trace on the surface, the tunnel about 10 m down (shown 3× deeper, like the map's heights), and drop lines between them
-    subGroup.push(ribbon(pts,5,0x2a1e12,0.35,0.3));
     w.dep=pts.map((q,i)=>{ const d=i*25; return 10*Math.min(1,d/40,(w.L-d)/40+0.0001); });
     const tp=pts.map((q,i)=>new THREE.Vector3(q[0]*S,meshY(q[0],q[1])-w.dep[i]*EX*S,q[1]*S));
-    const tube=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(tp),Math.max(8,pts.length*3),0.35,8,false),new THREE.MeshBasicMaterial({color:0xd9d6cc,transparent:true,opacity:.45,depthTest:false,depthWrite:false}));
+    const tube=new THREE.Line(new THREE.BufferGeometry().setFromPoints(new THREE.CatmullRomCurve3(tp).getPoints(Math.max(8,pts.length*3))),new THREE.LineBasicMaterial({color:0xf2ead2,transparent:true,opacity:1,depthTest:false,depthWrite:false}));
     tube.renderOrder=5; scene.add(tube); subGroup.push(tube);
     { const cp=[]; pts.forEach((q,i)=>{ if(i%2) return; const y0=meshY(q[0],q[1]); cp.push(q[0]*S,y0,q[1]*S, q[0]*S,y0-w.dep[i]*EX*S,q[1]*S); });
       const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(cp,3));
-      const dl=new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:0xd9d6cc,transparent:true,opacity:.3,depthTest:false,depthWrite:false})); dl.renderOrder=5; scene.add(dl); subGroup.push(dl); }
-    for(const [q,c] of [[w.entry,0x2a6a2a],[w.exit,0xd0b030]]){ const m=new THREE.Mesh(new THREE.CircleGeometry(14*S,16),new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.9,depthWrite:false})); m.rotation.x=-Math.PI/2; m.position.set(q[0]*S,meshY(q[0],q[1])+0.3,q[1]*S); scene.add(m); subGroup.push(m); }
-    if(w.name){ const m=pts[Math.floor(pts.length/2)]; addLabel('plc',w.name+' (10m)',m[0],m[1],'sub',2).style.cssText+='background:rgba(28,20,12,.75);color:#e8d9b0'; } }
+      const dl=new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:0xd9d6cc,transparent:true,opacity:.18,depthTest:false,depthWrite:false})); dl.renderOrder=5; scene.add(dl); subGroup.push(dl); }
+    for(const [q,c] of [[w.entry,0x2a6a2a],[w.exit,0xd0b030]]){ const m=new THREE.Mesh(new THREE.CircleGeometry(6*S,16),new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.9,depthWrite:false})); m.rotation.x=-Math.PI/2; m.position.set(q[0]*S,meshY(q[0],q[1])+0.3,q[1]*S); scene.add(m); subGroup.push(m); }
+    // the name written on the ground along the subway, like a map
+    if(w.name){ const a=pts[Math.floor(pts.length*0.2)], b=pts[Math.floor(pts.length*0.8)], mx=(a[0]+b[0])/2, mz=(a[1]+b[1])/2; let dx=b[0]-a[0], dz=b[1]-a[1]; if(dx<0){ dx=-dx; dz=-dz; }
+      const txt=w.name+' · 10 m deep', c=document.createElement('canvas'), g=c.getContext('2d'); g.font='italic 600 44px Georgia,serif'; const tw=Math.ceil(g.measureText(txt).width)+20; c.width=tw; c.height=60;
+      g.font='italic 600 44px Georgia,serif'; g.lineWidth=6; g.strokeStyle='rgba(0,0,0,.7)'; g.strokeText(txt,10,44); g.fillStyle='#efe6cc'; g.fillText(txt,10,44);
+      const tex=new THREE.CanvasTexture(c); tex.anisotropy=4; const Lm=Math.min(w.L*0.45,tw*0.8), Hm=Lm*60/tw;
+      const pl=new THREE.Mesh(new THREE.PlaneGeometry(Lm*S,Hm*S),new THREE.MeshBasicMaterial({map:tex,transparent:true,depthTest:false,depthWrite:false}));
+      pl.rotation.order='YXZ'; pl.rotation.y=Math.atan2(-dz,dx); pl.rotation.x=-Math.PI/2; { const h=Math.hypot(dx,dz)||1, ox=dz/h*Hm*0.55, oz=-dx/h*Hm*0.55; pl.position.set((mx+ox)*S,meshY(mx,mz)-10*EX*S,(mz+oz)*S); } pl.renderOrder=6; scene.add(pl); subGroup.push(pl); } }
   SUBW.grange=SUBW.find(w=>w.id==='grange'); }
 // mine craters: 19 crater groups along no man's land by early 1917 (source); group positions and sizes illustrative
 const MINE=[]; { for(let g=0;g<19;g++){ const sG=CORPS_S0+200+(g+hash(g,41)*0.6)*(DIVS[2].s1-CORPS_S0-300)/19, p=gfAt(sG), n=2+Math.floor(hash(g,43)*3);
@@ -952,7 +957,7 @@ function updGermanState(){ for(const b of batteries){ if(b.side!=='G') continue;
 // the German third position, shown in the last phase
 const g3Mesh=(()=>{ const pts=[]; for(let i=0;i<L_G3.length-1;i++){ const [ax,az]=L_G3[i],[bx,bz]=L_G3[i+1], n=Math.ceil(Math.hypot(bx-ax,bz-az)/60); for(let k=0;k<n;k++){ if(k%3===2) continue; pts.push([[ax+(bx-ax)*k/n,az+(bz-az)*k/n],[ax+(bx-ax)*(k+1)/n,az+(bz-az)*(k+1)/n]]); } }
   const G=new THREE.Group(); pts.forEach(seg=>{ const m=ribbon(seg,30,0xc03028,0.85,0.6); scene.remove(m); G.add(m); }); G.visible=false; scene.add(G); return G; })();
-const g3Lbl=addLabel('feat','German third position: Oppy–Méricourt line and Avion Switch',L_G3[4][0]+300,L_G3[4][1],'obj',6); g3Lbl.style.cssText+='background:rgba(120,20,16,.75);color:#fff';
+const g3Lbl=addLabel('feat','German third position: Oppy–Méricourt line and Avion Switch',L_G3[4][0]+300,L_G3[4][1],'obj',6); g3Lbl.style.cssText+='color:#ff9a8a';
 // men moving through the subways on the night of 8–9 April (blue dots)
 const subDots=(()=>{ const n=SUBW.length*14, g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(n*3),3));
   const p=new THREE.Points(g,new THREE.PointsMaterial({color:0x7fb2ff,size:4,sizeAttenuation:false,transparent:true,opacity:.95,depthTest:false})); p.renderOrder=6; p.visible=false; scene.add(p); return p; })();
@@ -1560,12 +1565,12 @@ const H145={nests:[]};
 function buildH145(){
   const tr=offLine(Z87[0]+80,Z87[1]-60,70); H145.trench=tr;
   ribbon(tr,16,0xff3355,0.95,1.4);
-  const mid=tr[Math.floor(tr.length/2)]; addLabel('feat','Trench left unshelled at the 87th Bn commander\'s request',mid[0],mid[1],'obj',7).style.cssText+='background:#7a1020;color:#fff';
+  const mid=tr[Math.floor(tr.length/2)]; addLabel('feat','Trench left unshelled at the 87th Bn commander\'s request',mid[0],mid[1],'obj',7).style.cssText+='color:#ff8a8a';
   [0.15,0.5,0.85].forEach(f=>{ const q=tr[Math.floor(f*(tr.length-1))]; H145.nests.push({x:q[0],z:q[1],kind:'trench'}); });
   [[-60,40],[80,-50]].forEach(([dx,dz])=>H145.nests.push({x:HILL145[0]+dx,z:HILL145[1]+dz,kind:'summit'}));
   [3,4,5].forEach(i=>H145.nests.push({x:L_PIMPLE[i][0]+60,z:L_PIMPLE[i][1],kind:'pimple'}));
   const mg=new THREE.MeshLambertMaterial({color:0x2a2a2a}); H145.nests.forEach(n=>{ const m=new THREE.Mesh(new THREE.BoxGeometry(3*S,1.2*S,3*S),mg); m.position.set(n.x*S,meshY(n.x,n.z)+0.06,n.z*S); scene.add(m); });
-  addLabel('feat','German machine guns on the Pimple fire into the 4th Division\'s flank',L_PIMPLE[4][0]+60,L_PIMPLE[4][1],'obj',6).style.cssText+='background:rgba(60,10,10,.75);color:#fff';
+  addLabel('feat','German machine guns on the Pimple fire into the 4th Division\'s flank',L_PIMPLE[4][0]+60,L_PIMPLE[4][1],'obj',6).style.cssText+='color:#ff8a8a';
 }
 const TR_N=360, trPos=new Float32Array(TR_N*6), trGeo=new THREE.BufferGeometry(); trGeo.setAttribute('position',new THREE.BufferAttribute(trPos,3)); trGeo.setDrawRange(0,0);
 const trLines=new THREE.LineSegments(trGeo,new THREE.LineBasicMaterial({color:0xffd27a,transparent:true,opacity:.95})); trLines.frustumCulled=false; scene.add(trLines);
