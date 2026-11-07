@@ -1061,7 +1061,8 @@ function chooseTarget(b){
   if(b.captured) return {none:'captured by the Canadians'};
   if(b.suppressed) return {none:'silenced by counter-battery fire before zero hour'};
   if(b.withdrawn) return {none:'withdrawn to the third position'};
-  if(PH.n===0&&b.mission!=='manual') return {none:'night firing is not modelled on this map'};
+  if(PH.n===0&&b.mission!=='manual'){ const k=tNow>=-600?0:1-0.88*Math.max(0,Math.min(1,(tNow-T_NIGHT0)/(T_INPOS-T_NIGHT0)));   // the bombardment dies down through the night to harassing fire, and stops before zero hour
+    if(Math.random()>k) return {none:tNow>=-600?'holding fire until zero hour (05:30)':'night: harassing fire only'}; }
   if(PH.prep&&b.side==='A'&&b.mission!=='manual'&&tNow<T_P2){ const heavy=['a6','a92','a60'].includes(b.key); if(hash(batteries.indexOf(b),77)>(heavy?0.5:0.34)) return {none:'hidden until Phase II of the bombardment (2 April)'}; }
   if(tNow<0 && !PH.prep && b.mission!=='manual') return {none:'holding fire until zero hour (05:30)'};
   let m=b.mission; if(m==='auto') m=b.T.role;
@@ -1202,7 +1203,7 @@ const playB=document.getElementById('play');
 playB.onclick=()=>{ if(tNow>=PH.t1){ tNow=PH.t0; clearShells(); curShot=null; } playing=!playing; playB.textContent=playing?'⏸ Pause':'▶ Play'; };
 document.getElementById('tl').oninput=e=>{ curShot=null; frozen=null; tNow=u2t(+e.target.value); clearShells(); batteries.forEach(b=>{b.cool=Math.random()*10; b.target=null;}); updatePhaseVisuals(true); };
 function setPhase(n,quiet){ if(typeof setShotScene==='function') setShotScene(null); if(!PHASES[n]) n=1; PH=PHASES[n]; document.getElementById('phSel').value=n; tNow=PH.t0; playing=false; playB.textContent='▶ Play'; frozen=null; curShot=null;
-  clearShells(); heatC.getContext('2d').clearRect(0,0,OW,OH); ovDirty=true; batteries.forEach(b=>{b.cool=Math.random()*10; b.target=null;});
+  if(!quiet){ clearShells(); heatC.getContext('2d').clearRect(0,0,OW,OH); } ovDirty=true; batteries.forEach(b=>{b.cool=Math.random()*10; b.target=null;});
   document.getElementById('phSub').textContent=PH.sub; document.getElementById('hDate').textContent={'-1':'20 March – 8 April 1917','0':'8–9 April 1917','4':'10–12 April 1917','5':'13–14 April 1917'}[n]||'9 April 1917'; jumpA=null; if(!tourOn) speed=userSpeed(); document.getElementById('evsum').textContent=`All events: ${PH.label}`; document.title='Vimy Ridge 1917 — '+PH.title;
   renderEvents(); updatePhaseVisuals(true); renderCard(); if(!quiet) log(`${PH.label} loaded. Press ▶ Play or drag the timeline.`);
   try{ history.replaceState(null,'','#phase'+n); }catch(e){} }
@@ -1271,7 +1272,7 @@ function bnAlong(b,f){ const d=b.L[b.L.length-1]*Math.max(0,Math.min(1,f)); let 
 // night of 8–9 April: each battalion's frontage is drawn where the battalion is, and joins the jumping-off line when it arrives
 function pathAt(b,d){ const L=b.L; d=Math.max(0,Math.min(L[L.length-1],d)); let j=1; while(j<L.length-1&&L[j]<d) j++; const u=(d-L[j-1])/((L[j]-L[j-1])||1), a=b.path[j-1], c=b.path[j], dx=c[0]-a[0], dz=c[1]-a[1], h=Math.hypot(dx,dz)||1;
   return [a[0]+dx*u,a[1]+dz*u,dx/h,dz/h,b.pdep[j-1]+(b.pdep[j]-b.pdep[j-1])*u]; }
-function nightLines(t){ const troop=[]; for(const b of BNS){ if(t<b.t1+700||!b.seg.length) continue; const P=bnAlong(b,(t-b.t0)/(b.t1-b.t0)), dx=P[0]-b.J[0], dz=P[1]-b.J[1]; troop.push(b.seg.map(q=>[q[0]+dx,q[1]+dz,q[2],q[3],q[4]])); } return {barr:[],how:[],troop,cap:[]}; }
+function nightLines(t){ const troop=[]; for(const b of BNS){ if(t<b.t1+700||!b.seg.length) continue; const P=bnAlong(b,(t-b.t0)/(b.t1-b.t0)), dx=P[0]-b.J[0], dz=P[1]-b.J[1]; troop.push(b.seg.map(q=>[q[0]+dx,q[1]+dz,q[2],q[3],q[4]])); } const pl=prepLines(t); return {barr:pl.barr,how:pl.how,troop,cap:[]}; }
 function updBattalions(dt){ const show=UI.bn&&!(typeof FOL!=='undefined'&&FOL.active)&&!window.__CSON&&PH.n!==-1;
   const front=PH.n>=1, rebuild=front&&bnTroopT!==lastTroopT; if(rebuild) bnTroopT=lastTroopT;
   for(const b of BNS){ let tgt=null;
