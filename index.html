@@ -86,7 +86,7 @@ body.cine.tour #phase{display:block!important;top:8vh;bottom:auto;left:22vw;righ
   <li>Click any gun battery to see its range and how accurate it is.</li>
  </ol>
  <p class="small">Blue ground is held by the Canadians, red by the Germans. Orange bands are the barrage. Figures marked <i>model</i> or <i>illustrative</i> are estimates, not 1917 records. If it runs slowly, tick <b>Low detail</b> on the left.</p>
- <button id="introGo" style="margin-top:6px">Start</button>
+ <button id="introGo" style="margin-top:6px" disabled>Loading the map…</button>
 </div></div>
 <div id="people" style="display:none"><div class="box"><h2>Follow a man</h2>
  <p class="small">Real men of the Canadian Corps at Vimy. Pick a soldier and an officer and follow each through the battle. Every fact comes from the sources listed with him; the figures and scenes around him are reconstructions.</p>
@@ -344,7 +344,7 @@ renderer.setPixelRatio(Math.min(1.5,devicePixelRatio)); renderer.setSize(innerWi
 document.getElementById('app').appendChild(renderer.domElement);
 const scene=new THREE.Scene(); scene.background=new THREE.Color(0x9ea59b); scene.fog=new THREE.Fog(0x9ea59b,3500,9000);
 const camera=new THREE.PerspectiveCamera(42,innerWidth/innerHeight,0.05,30000);
-camera.position.set(-720,520,760);
+camera.position.set(-160,620,1330);
 const hemi=new THREE.HemisphereLight(0xe8eadf,0x4a4436,0.75); scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xfff2dc,0.8); sun.position.set(-1500,2500,2500); scene.add(sun);
 // ================= procedural textures (generated in the browser: no image files) =================
@@ -474,6 +474,7 @@ function cfOffset(o){ const Q=[]; for(let i=0;i<CF.length-1;i++){ const [ax,az]=
   // how heavily shelled the ground is (0–1), by distance from the German front line
   const shellD=d=>{ if(d<-1800) return 0.03; if(d<-250) return 0.03+0.5*Math.pow((d+1800)/1550,2); if(d<700) return 1; if(d<2600) return 1-0.55*(d-700)/1900; if(d<5200) return 0.45-0.38*(d-2600)/2600; return 0.07; };
   window.__shellD=shellD;
+  const rest=()=>{
   // land-use blocks: jittered 750 m cells, each with its own strip direction and strip width
   const BS=1300, blk=(x,z)=>{ const ci=Math.floor((x+MX)/BS), cj=Math.floor((z+MZ)/BS); let best=1e18,bi=0,bj=0;
     for(let a=-1;a<=1;a++) for(let b=-1;b<=1;b++){ const ii=ci+a, jj=cj+b, cx=(ii+0.15+0.7*hash(ii,jj+500))*BS-MX, cz=(jj+0.15+0.7*hash(ii+300,jj))*BS-MZ, dd=(x-cx)**2+(z-cz)**2; if(dd<best){best=dd;bi=ii;bj=jj;} } return [bi,bj]; };
@@ -535,6 +536,10 @@ function cfOffset(o){ const Q=[]; for(let i=0;i<CF.length-1;i++){ const [ax,az]=
   for(let s=0;s<GFS[GFS.length-1].s;s+=230){ const p=gfAt(s), side=hash(s|0,7)<.5?-1:1, L=side<0?600+hash(s|0,3)*700:300+hash(s|0,9)*1300, P=[];
     for(let u=0;u<=L;u+=30){ const o=side*u+(side<0?-150:0), j=(Math.floor(u/60)%2?9:-9); P.push(P2C(p.x+p.nx*o+p.nz*j,p.z+p.nz*o-p.nx*j)); }
     }
+  };
+  // the painted ground is saved as ground.jpg next to the page (built from this same code); painting it here takes several seconds on a slow computer
+  if(location.protocol==='file:'||window.__paintGround){ rest(); }
+  else { ctx.fillStyle='#86805e'; ctx.fillRect(0,0,BW,BH); const im=new Image(); im.onload=()=>{ ctx.drawImage(im,0,0,BW,BH); baseTex.needsUpdate=true; }; im.onerror=()=>{ rest(); baseTex.needsUpdate=true; }; im.src='ground.jpg?v=1'; }
 })();
 // held-ground tint (a label, not the ground): blue west of the German front line, red east, fading with distance; toggled under Display
 const sideC=document.createElement('canvas'); sideC.width=800; sideC.height=672;
@@ -959,7 +964,7 @@ function updExtraPhase(){ updGermanState(); updSubDots(); const g3=PH.n===5&&tNo
 // guided camera and cards
 const midGF=()=>gfAt((CORPS_S0+CORPS_S1)/2);
 const SHOTSP=[
- {id:'pr1',t0:-20*DAY,t1:T_P2,speed:22000,go(){ const m=midGF(); camTo(m.x+500,m.z,-m.nx*5200-1500,-m.nz*5200+2600,2700,3); }},
+ {id:'pr1',t0:-20*DAY,t1:T_P2,speed:22000,go(){ camTo(800,-600,-2400,13900,6200,3); }},
  {id:'pr2',t0:T_P2,t1:-3*DAY,speed:9000,go(){ const m=midGF(); camTo(m.x+m.nx*1200,m.z+m.nz*1200,-m.nx*4200-1200,-m.nz*4200+2400,2400,3); }},
  {id:'pr3',t0:-3*DAY,t1:T_NIGHT0+1,speed:9000,go(){ const m=midGF(); camTo(m.x+m.nx*3800,m.z+m.nz*3800,-m.nx*3600-1400,-m.nz*3600+2200,2600,3); }},
 ];
@@ -1088,8 +1093,8 @@ const shellGeo=new THREE.CylinderGeometry(1,0.35,1,5); shellGeo.rotateX(Math.PI/
 function arcPos(sh,f){ const o=sh.o0, X0=o?o.x:sh.x0*S, Z0=o?o.z:sh.z0*S, y0=o?o.y:meshY(sh.x0,sh.z0)+.3, y1=meshY(sh.x1,sh.z1), apex=sh.r*APEX[sh.T.kind]*S; return new THREE.Vector3(X0+(sh.x1*S-X0)*f, y0+(y1-y0)*f+4*apex*f*(1-f), Z0+(sh.z1*S-Z0)*f); }
 const _sv=new THREE.Vector3();
 function placeSliver(sh,f){ const p=arcPos(sh,f); sh.vis.position.copy(p); if(sh.arc&&!sh.done) sh.arc.geometry.setDrawRange(0,UI.traj?Math.floor(f*36)+1:0);
-  { const u=sh.vis.userData, k=window.__CSON?1:Math.max(1,Math.min(14,camera.position.distanceTo(p)/90)); const kw=sh.side==='A'?k*0.4:k; sh.vis.scale.set(u.w*kw,u.w*kw,u.L*Math.min(k,2.5)); } _sv.copy(arcPos(sh,Math.min(1,f+0.004))).sub(p); if(_sv.lengthSq()<1e-8) _sv.copy(p).sub(arcPos(sh,Math.max(0,f-0.004))); sh.vis.lookAt(_sv.add(p)); }
-function launch(sh){ sh.launched=true; if(sh.piece) sh.piece.recoil=1;
+  { const u=sh.vis.userData, k=window.__CSON?1:Math.max(1,Math.min(14,camera.position.distanceTo(p)/90)); const kw=sh.side==='A'?k*0.4:k*0.5; sh.vis.scale.set(u.w*kw,u.w*kw,u.L*Math.min(k,2.5)); } _sv.copy(arcPos(sh,Math.min(1,f+0.004))).sub(p); if(_sv.lengthSq()<1e-8) _sv.copy(p).sub(arcPos(sh,Math.max(0,f-0.004))); sh.vis.lookAt(_sv.add(p)); }
+function launch(sh){ sh.launched=true; sh.rt=0; sh.rdur=Math.max((sh.tf-sh.t0)/Math.max(1,speed),1.6); if(sh.piece) sh.piece.recoil=1;
   if(sh.piece&&sh.piece.mesh&&!window.__CSON){ const w=sh.piece.mesh.getWorldPosition(new THREE.Vector3()); w.y+=0.35*(sh.piece.mesh.scale.x||1); sh.o0=w; }
   const vf=sh.b.vf||1; { const ms=(1.8+sh.T.cal/55)*vf; if(sh.o0) addFx(starTex,sh.o0.x,sh.o0.y,sh.o0.z,ms*0.3,ms,0.085,1,'pop'); else addFx(starTex,sh.x0*S,meshY(sh.x0,sh.z0)+0.3*vf,sh.z0*S,ms*0.3,ms,0.085,1,'pop'); }
   if(visCount<(LOW?60:360)){ visCount++; const m=new THREE.Mesh(shellGeo,new THREE.MeshBasicMaterial({color:sh.side==='A'?0xfff3a0:0xffb090,transparent:true,opacity:.95,depthWrite:false})); const w=0.14+sh.T.cal/1600, L=3+sh.T.cal/50; m.scale.set(w,w,L); m.userData.w=w; m.userData.L=L; m.renderOrder=7; fxRoot().add(m); sh.vis=m;
@@ -1434,7 +1439,7 @@ canvasEl.addEventListener('pointerleave',()=>{ document.getElementById('tip').st
 addEventListener('pointerup',()=>{ aimDrag=false; if(dragging){ dragging.target=null; dragging.buildRings(); recomputeReach(); dragging=null; } controls.enabled=true; });
 
 controls=new THREE.OrbitControls(camera,canvasEl);
-controls.target.set(60,10,-120); controls.maxPolarAngle=1.45; controls.minDistance=2; controls.maxDistance=4200; controls.zoomSpeed=0.45; controls.enableDamping=true; controls.dampingFactor=.08; controls.keys={LEFT:'',UP:'',RIGHT:'',BOTTOM:''}; controls.update();
+controls.target.set(80,10,-60); controls.maxPolarAngle=1.45; controls.minDistance=2; controls.maxDistance=4200; controls.zoomSpeed=0.45; controls.enableDamping=true; controls.dampingFactor=.08; controls.keys={LEFT:'',UP:'',RIGHT:'',BOTTOM:''}; controls.update();
 addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); if(typeof FOL!=='undefined'&&FOL.active) setFollowView(true); renderer.setSize(innerWidth,innerHeight); drawChart(); });
 
 // ================= impact crosshairs (fixed screen size) =================
@@ -2513,7 +2518,7 @@ document.getElementById('tourB').onchange=e=>{ tourOn=e.target.checked; if(tourO
 // ================= main loop =================
 const vt=new THREE.Vector3(); let last=performance.now(), tick=0;
 function place2D(el,x,y,z){ vt.set(x,y,z).project(camera); if(vt.z>1||Math.abs(vt.x)>1.05||Math.abs(vt.y)>1.05){ el.style.display='none'; return; } el.style.display=''; el.style.left=((vt.x+1)/2*innerWidth)+'px'; el.style.top=((1-vt.y)/2*innerHeight)+'px'; }
-function loop(now){ const rdt=Math.max(0,(now-last)/1000), dt=Math.min(.1,rdt); last=now; if(rdt<1) fpsWatch(rdt); if(jumpA){ playing=false; stepJump(dt); }
+function loop(now){ if(!window.__ready){ window.__ready=1; setTimeout(()=>{ const b=document.getElementById('introGo'); if(b){ b.disabled=false; b.textContent='Start'; } },0); } const rdt=Math.max(0,(now-last)/1000), dt=Math.min(.1,rdt); last=now; if(rdt<1) fpsWatch(rdt); if(jumpA){ playing=false; stepJump(dt); }
   if(tourOn&&!frozen&&playing){ const sh0=shotAt(tNow); if(sh0!==curShot){ curShot=sh0; sh0.go(); speed=sh0.speed; focusFB=(sh0.id==='fb'); setShotScene(PH.n===1?sh0.id:null); } }
   else if(!tourOn) focusFB=false;
   if(playing){ let sdt=dt*speed;
@@ -2522,10 +2527,11 @@ function loop(now){ const rdt=Math.max(0,(now-last)/1000), dt=Math.min(.1,rdt); 
       if(c){ const rem=c.tf-tNow; if(rem<=1.5) sdt=Math.min(sdt,dt*0.6);            // slow motion for the last 1.5 s of flight
         if(rem<=sdt){ tNow=c.tf-0.001; placeSliver(c,0.995); freezeOn(c,c.freezeKind); sdt=0; } } }
     tNow+=sdt; featuredBarrage(sdt); if(tNow>=PH.t1){ tNow=PH.t1; const o=phaseOrder(), k=o.indexOf(PH.n); if(k<o.length-1&&document.getElementById('cont').checked){ setPhase(o[k+1],true); log(`Continuing: ${PH.label}`); playing=true; playB.textContent='⏸ Pause'; } else { playing=false; playB.textContent='↺ Replay'; } }
-    for(const b of batteries){ if(!b.alive()) continue; b.cool-=sdt;
+    for(const b of batteries){ if(!b.alive()) continue; b.cool-=sdt; b.rc=(b.rc||0)-dt;
       if(b.mission==='manual'){ b.status=b.cool>0?`reloading ${Math.ceil(b.cool)} s`:'ready — awaiting your order'; continue; }
-      if(b.cool<=0){ const t=chooseTarget(b); b.target=t; if(t.none){ b.status='holding — '+t.none; b.cool=6; } else { const r=curRange(b); b.status=`firing at ${fmt(r)} m (${(phit(b.T,r)*100).toFixed(1)}% per round)`; fire(b,t); b.cool=60/b.T.cad*(.85+Math.random()*.3); } } }
-    for(const sh of shells){ if(!sh.launched&&tNow>=sh.t0) launch(sh); if(sh.launched&&sh.vis) placeSliver(sh,Math.min(1,(tNow-sh.t0)/(sh.tf-sh.t0))); if(tNow>=sh.tf){ if(!sh.launched) launch(sh); impact(sh); sh.done=true; } }
+      if(b.cool<=0&&b.rc<=0){ const t=chooseTarget(b); b.target=t; if(t.none){ b.status='holding — '+t.none; b.cool=6; } else { const r=curRange(b); b.status=`firing at ${fmt(r)} m (${(phit(b.T,r)*100).toFixed(1)}% per round)`; fire(b,t); b.cool=60/b.T.cad*(.85+Math.random()*.3); b.rc=Math.max(0.6,b.cool/Math.max(1,speed)); } } }   // at high playback speeds each battery fires a visible salvo at most every 0.6 s (real time)
+    for(const sh of shells){ if(!sh.launched&&tNow>=sh.t0) launch(sh); if(!sh.launched) continue; sh.rt+=sdt/Math.max(1,speed); const fv=Math.min(1,sh.rt/sh.rdur);   // flight drawn in screen time: never shorter than 1.6 s, whatever the playback speed
+      if(sh.vis) placeSliver(sh,Math.min(0.999,fv)); if(tNow>=sh.tf&&fv>=1){ impact(sh); sh.done=true; } }
     shells=shells.filter(s=>!s.done);
     updatePhaseVisuals(false);
   }
