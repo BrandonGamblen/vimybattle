@@ -219,7 +219,7 @@ const SIDE_NAME={A:'Canadian/British', G:'German'};
 const PLACES=[['Vimy',1445,-826],['Thélus',814,1178],['Farbus',2486,801],['Souchez',-3562,-3104],['Givenchy-en-Gohelle',-1193,-2869],['Neuville-St-Vaast',-1945,827],
  ['Angres',-2092,-4528],['Liévin',-662,-6094],['Lens',2692,-7564],['Avion',2879,-5046],['Méricourt',5146,-4021],['Bailleul-Sir-Berthoult',4353,3056],['Arras',-578,8005],
  ['St-Laurent-Blangy',1206,7844],['Mont-St-Éloi',-6925,1551],['Ablain-St-Nazaire',-5767,-3136],['Anzin-St-Aubin',-3031,5768],['Maroeuil',-6034,4427],['Aix-Noulette',-5999,-6748],
- ['Fampoux',5902,7036],['Willerval',3927,801],['Écurie',-1399,3825],['Roclincourt',-213,4359],['Petit Vimy (1917 map)',1094,-1160],['Rouvroy',8094,-3055],['Drocourt',9535,-2782]];
+ ['Fampoux',5902,7036],['Willerval',3927,801],['Écurie',-1399,3825],['Roclincourt',-213,4359],['Petit Vimy',1094,-1160],['Rouvroy',8094,-3055],['Drocourt',9535,-2782]];
 const HILL145=[-1144,-1606];
 
 // ===== traced from the 1917 maps (front lines: "Canadian and German front line positions as at April 9th 1917";
@@ -676,7 +676,7 @@ const MINE=[]; { for(let g=0;g<19;g++){ const sG=CORPS_S0+200+(g+hash(g,41)*0.6)
 const mineC=document.createElement('canvas'); mineC.width=OW; mineC.height=OH;
 { const c=mineC.getContext('2d'); for(const [x,z,r] of MINE){ const px=(x+MX)/(2*MX)*OW, py=(z+MZ)/(2*MZ)*OH, pr=Math.max(1.2,r/(2*MX)*OW);
     c.fillStyle='rgba(30,24,18,.75)'; c.beginPath(); c.arc(px,py,pr,0,7); c.fill(); c.strokeStyle='rgba(205,200,185,.8)'; c.lineWidth=0.8; c.stroke(); }
-  const m=MINE[Math.floor(MINE.length*0.3)]; addLabel('plc','Mine crater groups (positions approximate)',m[0]-250,m[1],'obj',2); }
+  const m=MINE[Math.floor(MINE.length*0.3)]; addLabel('plc','Mine craters',m[0]-250,m[1],'obj',2); }
 // places & features
 PLACES.forEach(([n,x,z])=>addLabel('plc',n,x,z,'plc',3));
 addLabel('feat','Hill 145 · today the Vimy Memorial',HILL145[0],HILL145[1],'feat',9);
