@@ -916,7 +916,7 @@ function prepLines(t){ const out={barr:[],how:[],troop:[],cap:[]};
   if(t>=T_P2){ out.how.push(...offSegs(CORPS_S0,CORPS_S1,p=>p.dB)); out.how.push(...offSegs(CORPS_S0,CORPS_S1,p=>p.dR)); }
   return out; }
 const EVENTSP=[
- [-20*DAY,'20 March — <b>The bombardment begins.</b> Artillery Instruction No. 1 splits the artillery battle into four phases; this is the first. Only about half of the heavy batteries and a part of the field artillery open fire, so the Germans cannot see how many guns are massed on this front. <i>Orange band: wire-cutting targets. Red bands: trench junctions, machine-gun emplacements, strongpoints, tunnel entrances and dugouts. Blue dots in the Canadian front and support trenches: the battalions holding the line, relieved in turn every few days (numbers illustrative). The assault battalions\' markers come in from the western edge of the map on the night of 8 April.</i>'],
+ [-20*DAY,'20 March — <b>The bombardment begins.</b> Artillery Instruction No. 1 splits the artillery battle into four phases; this is the first. Only about half of the heavy batteries and a part of the field artillery open fire, so the Germans cannot see how many guns are massed on this front. <i>Orange band: wire-cutting targets. Red bands: trench junctions, machine-gun emplacements, strongpoints, tunnel entrances and dugouts. Blue dots in the Canadian front and support trenches: sentries of the battalions holding the line (most of each garrison is in dugouts; battalions are relieved every few days; numbers illustrative). The assault battalions\' markers come in from the western edge of the map on the night of 8 April.</i>'],
  [-9*DAY,'31 March — Raids go out every night during the bombardment, from a few men up to 600 of all ranks, sent by the 10th Canadian Brigade on this date. Raids bring back prisoners and check whether the wire has been cut.'],
  [T_P2,'2 April — <b>Phase II: "the week of suffering"</b>, the Germans\' name for it. Every battery now fires, Third Army guns join in, and the targets reach back to the second and third German positions. Two feint barrages practise the barrage lines and catch errors in the calculations.'],
  [-5*DAY,'4 April — German soldiers in the forward trenches go without food for two or three days and wear themselves out digging open the entrances to their dugouts.'],
@@ -980,8 +980,8 @@ const SHOTSP=[
  {id:'pr3',t0:-3*DAY,t1:T_NIGHT0+1,speed:9000,go(){ const m=midGF(); camTo(m.x+m.nx*3800,m.z+m.nz*3800,-m.nx*3600-1400,-m.nz*3600+2200,2600,3); }},
 ];
 const SHOTSN=[
- {id:'n1',t0:T_NIGHT0,t1:T_BERTH,speed:90,go(){ const w=SUBW.grange; camTo(w.entry[0]-300,w.entry[1],-1700,1500,1200,3); }},
- {id:'n2',t0:T_BERTH,t1:-16200,speed:300,go(){ const m=midGF(); camTo(m.x-m.nx*700,m.z-m.nz*700,-m.nx*2600-900,-m.nz*2600+1600,1500,3); }},
+ {id:'n1',t0:T_NIGHT0,t1:T_BERTH,speed:90,track:true,go(){ camTo(-8200,-200,-1800,3200,2600,3); }},
+ {id:'n2',t0:T_BERTH,t1:-16200,speed:300,track:true,go(){ const m=midGF(); camTo(m.x-m.nx*700,m.z-m.nz*700,-m.nx*2600-900,-m.nz*2600+1600,1500,3); }},
  {id:'n3',t0:-16200,t1:0,speed:220,go(){ const w=SUBW.grange; camTo(w.exit[0],w.exit[1],-w.p.nx*500-300,-w.p.nz*500+350,300,3); }},
 ];
 const SHOTSA=[
@@ -1283,6 +1283,9 @@ function bnAlong(b,f){ const d=b.L[b.L.length-1]*Math.max(0,Math.min(1,f)); let 
 function pathAt(b,d){ const L=b.L; d=Math.max(0,Math.min(L[L.length-1],d)); let j=1; while(j<L.length-1&&L[j]<d) j++; const u=(d-L[j-1])/((L[j]-L[j-1])||1), a=b.path[j-1], c=b.path[j], dx=c[0]-a[0], dz=c[1]-a[1], h=Math.hypot(dx,dz)||1;
   return [a[0]+dx*u,a[1]+dz*u,dx/h,dz/h,b.pdep[j-1]+(b.pdep[j]-b.pdep[j-1])*u]; }
 function nightLines(t){ const troop=[]; for(const b of BNS){ if(t<b.t1+700||!b.seg.length) continue; const P=bnAlong(b,(t-b.t0)/(b.t1-b.t0)), dx=P[0]-b.J[0], dz=P[1]-b.J[1]; troop.push(b.seg.map(q=>[q[0]+dx,q[1]+dz,q[2],q[3],q[4]])); } const pl=prepLines(t); return {barr:pl.barr,how:pl.how,troop,cap:[]}; }
+function trackColumns(dt){ if(!(tourOn&&curShot&&curShot.track&&PH.n===0&&playing)) return; const v=BNS.filter(b=>b.vis.visible&&b.pos); if(!v.length) return;
+  let x=0,z=0; v.forEach(b=>{ x+=b.pos[0]; z+=b.pos[1]; }); x/=v.length; z/=v.length; const P=new THREE.Vector3(x*S,meshY(x,z),z*S), T=flyT<1?fly.t1:controls.target, k=Math.min(1,dt*0.5);
+  const d=P.sub(T).multiplyScalar(k); d.y=0; if(flyT<1){ fly.t1.add(d); fly.c1.add(d); } else { controls.target.add(d); camera.position.add(d); } }
 function updBattalions(dt){ const show=UI.bn&&!(typeof FOL!=='undefined'&&FOL.active)&&!window.__CSON&&PH.n!==-1;
   const front=PH.n>=1, rebuild=front&&bnTroopT!==lastTroopT; if(rebuild) bnTroopT=lastTroopT;
   for(const b of BNS){ let tgt=null;
@@ -1322,7 +1325,7 @@ const GER=(()=>{ const out=[]; for(const [o,step] of [[0,6],[220,10],[450,15],[9
     out.push({x:p.x+p.nx*(o+j+zig),z:p.z+p.nz*(o+j+zig),nx:p.nx,nz:p.nz,o}); } return out; })();
 var capData=null;
 // Canadian trench garrison while the assault battalions are back in billets (illustrative density: front line 1 man per 8 m, support trench 1 per 12 m)
-const CGAR=(()=>{ const out=[]; for(const [T,step] of [[TRENCH3D.userData.TRC.cf,8],[TRENCH3D.userData.TRC.sup,12]]){ let acc=0; for(let i=1;i<T.length;i++){ acc+=Math.hypot(T[i][0]-T[i-1][0],T[i][1]-T[i-1][1]); if(acc<step) continue; acc=0; const q=T[i], sv=sOfPt(q[0],q[1]); if(sv<CORPS_S0-100||sv>CORPS_S1+100) continue; const g=gfAt(sv); out.push({x:q[0],z:q[1],nx:g.nx,nz:g.nz}); } } return out; })();
+const CGAR=(()=>{ const out=[]; for(const [T,step] of [[TRENCH3D.userData.TRC.cf,22],[TRENCH3D.userData.TRC.sup,45]]){ let acc=0; for(let i=1;i<T.length;i++){ acc+=Math.hypot(T[i][0]-T[i-1][0],T[i][1]-T[i-1][1]); if(acc<step) continue; acc=0; const q=T[i], sv=sOfPt(q[0],q[1]); if(sv<CORPS_S0-100||sv>CORPS_S1+100) continue; const g=gfAt(sv); out.push({x:q[0],z:q[1],nx:g.nx,nz:g.nz}); } } return out; })();
 const CPTS=(()=>{ const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(CGAR.length*3),3));
   const p=new THREE.Points(g,new THREE.PointsMaterial({color:0x7fb2ff,size:3,sizeAttenuation:false,depthTest:false,transparent:true,opacity:.95})); p.renderOrder=8; p.frustumCulled=false; p.visible=false; scene.add(p); return p; })();
 const GPTS=(()=>{ const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(GER.length*3),3));
@@ -2567,7 +2570,7 @@ function loop(now){ if(!window.__ready){ window.__ready=1; setTimeout(()=>{ cons
     shells=shells.filter(s=>!s.done);
     updatePhaseVisuals(false);
   }
-  updShocks(dt); updTracers(dt); updSnow(dt); updFollow(dt); updBattalions(dt); updUnitLabels(); updSubUnits(); updFight(dt); updZeroBanner(); if((window.__fn||0)%5===0) updCasPane();
+  updShocks(dt); updTracers(dt); updSnow(dt); updFollow(dt); updBattalions(dt); trackColumns(dt); updUnitLabels(); updSubUnits(); updFight(dt); updZeroBanner(); if((window.__fn||0)%5===0) updCasPane();
   { const near=camera.position.distanceTo(controls.target)<45; if(near!==window.__shNear){ window.__shNear=near; renderer.shadowMap.needsUpdate=true; } renderer.shadowMap.autoUpdate=near;
     window.__fn=(window.__fn||0)+1; if(window.__fn%10===0) LODH.forEach(h=>{ const far=camera.position.distanceTo(h.position)>160; if(far&&h.visible){ h.visible=false; h.userData.lodHid=true; } else if(!far&&h.userData.lodHid){ h.visible=true; h.userData.lodHid=false; } }); }
   { const hideOv=typeof FOL!=='undefined'&&FOL.hideOv; troopMeshes.forEach(m=>m.visible=UI.troop&&!hideOv); xhPts.visible=UI.xh||(tourOn&&!!curShot&&['adv','fp'].includes(curShot.id)); TRENCH3D.visible=camera.position.y<260; } skyDome.position.copy(camera.position); updSunShadow();
