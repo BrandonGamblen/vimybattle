@@ -532,14 +532,15 @@ function cfOffset(o){ const Q=[]; for(let i=0;i<CF.length-1;i++){ const [ax,az]=
   const offPts=off=>GFS.map((p,i)=>{ const zig=((i>>2)%2?7:-7); return P2C(p.x+p.nx*(off+zig),p.z+p.nz*(off+zig)); });
   const cfPts=CF.map(p=>P2C(p[0],p[1]));
   const supPts=cfOffset(150).map(q=>P2C(q[0],q[1]));
-  for(const [P,w] of [[cfPts,1.4],[supPts,1.0],[offPts(0),1.4],...[220,450,900,1500].map(o=>[offPts(o),1.0])]){ line(P,w*2.1,'rgba(214,208,190,.85)'); line(P,w*0.8,'rgba(40,32,24,.9)'); }
+  const ditPts=GFS.filter(p=>p.s>=CORPS_S0&&p.s<=CORPS_S1).map(p=>{ const o=-Math.min(120,Math.max(20,Math.abs(polyInfo(CF,p.x,p.z).d)*0.5)); return P2C(p.x+p.nx*o,p.z+p.nz*o); });
+  for(const [P,w] of [[cfPts,1.4],[supPts,1.0],[ditPts,0.9],[offPts(0),1.4],...[220,450,900,1500].map(o=>[offPts(o),1.0])]){ line(P,w*2.1,'rgba(214,208,190,.85)'); line(P,w*0.8,'rgba(40,32,24,.9)'); }
   for(let s=0;s<GFS[GFS.length-1].s;s+=230){ const p=gfAt(s), side=hash(s|0,7)<.5?-1:1, L=side<0?600+hash(s|0,3)*700:300+hash(s|0,9)*1300, P=[];
     for(let u=0;u<=L;u+=30){ const o=side*u+(side<0?-150:0), j=(Math.floor(u/60)%2?9:-9); P.push(P2C(p.x+p.nx*o+p.nz*j,p.z+p.nz*o-p.nx*j)); }
     }
   };
   // the painted ground is saved as ground.jpg next to the page (built from this same code); painting it here takes several seconds on a slow computer
   if(location.protocol==='file:'||window.__paintGround){ rest(); }
-  else { ctx.fillStyle='#86805e'; ctx.fillRect(0,0,BW,BH); const im=new Image(); im.onload=()=>{ ctx.drawImage(im,0,0,BW,BH); baseTex.needsUpdate=true; }; im.onerror=()=>{ rest(); baseTex.needsUpdate=true; }; im.src='ground.jpg?v=1'; }
+  else { ctx.fillStyle='#86805e'; ctx.fillRect(0,0,BW,BH); const im=new Image(); im.onload=()=>{ ctx.drawImage(im,0,0,BW,BH); baseTex.needsUpdate=true; }; im.onerror=()=>{ rest(); baseTex.needsUpdate=true; }; im.src='ground.jpg?v=2'; }
 })();
 // held-ground tint (a label, not the ground): blue west of the German front line, red east, fading with distance; toggled under Display
 const sideC=document.createElement('canvas'); sideC.width=800; sideC.height=672;
@@ -969,7 +970,8 @@ function updExtraPhase(){ updGermanState(); updSubDots(); const g3=PH.n===5&&tNo
 // guided camera and cards
 const midGF=()=>gfAt((CORPS_S0+CORPS_S1)/2);
 const SHOTSP=[
- {id:'pr1',t0:-20*DAY,t1:T_P2,speed:22000,go(){ camTo(800,-600,-2400,13900,6200,3); }},
+ {id:'pr1',t0:-20*DAY,t1:-13.5*DAY,speed:22000,go(){ camTo(800,-600,-2400,13900,6200,3); }},
+ {id:'pr1b',t0:-13.5*DAY,t1:T_P2,speed:22000,go(){ camTo(-1300,1600,2200,2700,1350,4); }},
  {id:'pr2',t0:T_P2,t1:-3*DAY,speed:9000,go(){ const m=midGF(); camTo(m.x+m.nx*1200,m.z+m.nz*1200,-m.nx*4200-1200,-m.nz*4200+2400,2400,3); }},
  {id:'pr3',t0:-3*DAY,t1:T_NIGHT0+1,speed:9000,go(){ const m=midGF(); camTo(m.x+m.nx*3800,m.z+m.nz*3800,-m.nx*3600-1400,-m.nz*3600+2200,2600,3); }},
 ];
@@ -987,6 +989,7 @@ PHASES[-1].shots=SHOTSP; PHASES[0].shots=SHOTSN; PHASES[5].shots=SHOTSA;
 function cardX(id){
   const nG=batteries.filter(b=>b.side==='G'&&b.supp0!==undefined&&!/^Farbus/.test(b.tag||'')), sil=nG.filter(b=>b.suppressed).length;
   if(id==='pr1') return `<h3>20 March · the first phase</h3><p>The bombardment runs for 20 days. For the first 13, only about half of the heavy guns and a part of the field guns fire, and they shift up and down the front so the Germans cannot tell where the attack will come.</p><p>Field guns cut the wire. Heavy howitzers hit trench junctions, machine-gun emplacements, strongpoints, tunnel entrances and dugouts.</p><p class="small">On this map, Allied batteries that were not yet firing show "hidden until 2 April" when selected. Which batteries were hidden is not recorded; the split here is illustrative.</p>`;
+  if(id==='pr1b') return cardX('pr1');
   if(id==='pr2') return `<h3>2–8 April · "the week of suffering"</h3><p>Every gun now fires. Targets reach back to the Black and Red Lines. More than one million shells fall in this week.</p><p>German soldiers in the forward trenches go without food for two or three days. Their nights are spent digging open dugout entrances buried by the day's shelling.</p>`;
   if(id==='pr3') return `<h3>Counter-battery</h3><p>Aircraft and sound-ranging have found 86% of the 212 German batteries active on this front. The counter-battery groups fire 125,900 rounds at them in the final week, and 83% of the German guns are out of action when the attack starts.</p><table><tr><td>German batteries on this map silenced so far</td><td class="red">${sil} of ${nG.length}</td></tr></table><p class="small">The dates on which each German battery on this map falls silent are illustrative.</p>`;
   if(id==='n1') return `<h3>8 April · the march up</h3><p>No trains: the Corps has held this front since October 1916, and the battalions are billeted a few kilometres back. They walk up after dark on marked routes, battalions 500 yards apart.</p><p>The Royal Canadian Regiment leaves Villers-au-Bois at 20:45 and is past Berthonval Farm by 22:00, heading for the Grange Subway.</p>`;
@@ -1235,7 +1238,7 @@ const TRENCH3D=(()=>{ const G=new THREE.Group(); G.visible=false; scene.add(G);
       else { const ph=d%24; o=(ph<12?ph:24-ph)/12*4-2; }
       out.push([Q[i][0]+n[0]*o*sg,Q[i][1]+n[1]*o*sg]); }
     return out; }
-  function addTrench(P,own,kind){ const T=trace(P,own,kind), w=kind==='fire'?1:kind==='ditch'?0.6:0.75; G.userData.last=T;
+  function addTrench(P,own,kind){ const T=trace(P,own,kind), w=kind==='fire'?1:kind==='ditch'?0.85:0.75; G.userData.last=T;
     [[7.5*w,0x9c917c,.9,0.05],[3.4*w,0x5a4a38,.95,0.06],[1.7*w,0x1d150f,1,0.07]].forEach(([wd,c,op,lift],k)=>{ const m=new THREE.Mesh(ribbonGeo(T,wd,lift),new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:op,depthWrite:false,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-3-k,polygonOffsetUnits:-3-k})); m.renderOrder=2+k*0.1; G.add(m); }); }
   const TRC={};
   addTrench(CF,-1,'fire'); TRC.cf=G.userData.last;
