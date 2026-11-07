@@ -977,7 +977,7 @@ const SHOTSP=[
  {id:'pr1',t0:-20*DAY,t1:-13.5*DAY,speed:22000,go(){ camTo(800,-600,-2400,13900,6200,3); }},
  {id:'pr1b',t0:-13.5*DAY,t1:T_P2,speed:22000,go(){ camTo(-1300,1600,2200,2700,1350,4); }},
  {id:'pr2',t0:T_P2,t1:-3*DAY,speed:9000,go(){ const m=midGF(); camTo(m.x+m.nx*1200,m.z+m.nz*1200,-m.nx*4200-1200,-m.nz*4200+2400,2400,3); }},
- {id:'pr3',t0:-3*DAY,t1:T_NIGHT0+1,speed:9000,go(){ const m=midGF(); camTo(m.x+m.nx*3800,m.z+m.nz*3800,-m.nx*3600-1400,-m.nz*3600+2200,2600,3); }},
+ {id:'pr3',t0:-3*DAY,t1:T_NIGHT0+1,speed:9000,orbit:true,go(){ const m=midGF(); camTo(m.x+m.nx*300,m.z+m.nz*300,-3200,3800,3000,3); }},
 ];
 const SHOTSN=[
  {id:'n1',t0:T_NIGHT0,t1:T_BERTH,speed:90,track:true,go(){ camTo(-8200,-200,-1800,3200,2600,3); }},
@@ -1283,6 +1283,8 @@ function bnAlong(b,f){ const d=b.L[b.L.length-1]*Math.max(0,Math.min(1,f)); let 
 function pathAt(b,d){ const L=b.L; d=Math.max(0,Math.min(L[L.length-1],d)); let j=1; while(j<L.length-1&&L[j]<d) j++; const u=(d-L[j-1])/((L[j]-L[j-1])||1), a=b.path[j-1], c=b.path[j], dx=c[0]-a[0], dz=c[1]-a[1], h=Math.hypot(dx,dz)||1;
   return [a[0]+dx*u,a[1]+dz*u,dx/h,dz/h,b.pdep[j-1]+(b.pdep[j]-b.pdep[j-1])*u]; }
 function nightLines(t){ const troop=[]; for(const b of BNS){ if(t<b.t1+700||!b.seg.length) continue; const P=bnAlong(b,(t-b.t0)/(b.t1-b.t0)), dx=P[0]-b.J[0], dz=P[1]-b.J[1]; troop.push(b.seg.map(q=>[q[0]+dx,q[1]+dz,q[2],q[3],q[4]])); } const pl=prepLines(t); return {barr:pl.barr,how:pl.how,troop,cap:[]}; }
+function orbitShot(dt){ if(!(tourOn&&curShot&&curShot.orbit&&flyT>=1)) return; const t=controls.target, c=camera.position, a=dt*0.06, dx=c.x-t.x, dz=c.z-t.z;   // slow orbit round the middle of the battlefield
+  c.x=t.x+dx*Math.cos(a)-dz*Math.sin(a); c.z=t.z+dx*Math.sin(a)+dz*Math.cos(a); }
 function trackColumns(dt){ if(!(tourOn&&curShot&&curShot.track&&PH.n===0&&playing)) return; const v=BNS.filter(b=>b.vis.visible&&b.pos); if(!v.length) return;
   let x=0,z=0; v.forEach(b=>{ x+=b.pos[0]; z+=b.pos[1]; }); x/=v.length; z/=v.length; const P=new THREE.Vector3(x*S,meshY(x,z),z*S), T=flyT<1?fly.t1:controls.target, k=Math.min(1,dt*0.5);
   const d=P.sub(T).multiplyScalar(k); d.y=0; if(flyT<1){ fly.t1.add(d); fly.c1.add(d); } else { controls.target.add(d); camera.position.add(d); } }
@@ -2570,7 +2572,7 @@ function loop(now){ if(!window.__ready){ window.__ready=1; setTimeout(()=>{ cons
     shells=shells.filter(s=>!s.done);
     updatePhaseVisuals(false);
   }
-  updShocks(dt); updTracers(dt); updSnow(dt); updFollow(dt); updBattalions(dt); trackColumns(dt); updUnitLabels(); updSubUnits(); updFight(dt); updZeroBanner(); if((window.__fn||0)%5===0) updCasPane();
+  updShocks(dt); updTracers(dt); updSnow(dt); updFollow(dt); updBattalions(dt); trackColumns(dt); orbitShot(dt); updUnitLabels(); updSubUnits(); updFight(dt); updZeroBanner(); if((window.__fn||0)%5===0) updCasPane();
   { const near=camera.position.distanceTo(controls.target)<45; if(near!==window.__shNear){ window.__shNear=near; renderer.shadowMap.needsUpdate=true; } renderer.shadowMap.autoUpdate=near;
     window.__fn=(window.__fn||0)+1; if(window.__fn%10===0) LODH.forEach(h=>{ const far=camera.position.distanceTo(h.position)>160; if(far&&h.visible){ h.visible=false; h.userData.lodHid=true; } else if(!far&&h.userData.lodHid){ h.visible=true; h.userData.lodHid=false; } }); }
   { const hideOv=typeof FOL!=='undefined'&&FOL.hideOv; troopMeshes.forEach(m=>m.visible=UI.troop&&!hideOv); xhPts.visible=UI.xh||(tourOn&&!!curShot&&['adv','fp'].includes(curShot.id)); TRENCH3D.visible=camera.position.y<260; } skyDome.position.copy(camera.position); updSunShadow();
