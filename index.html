@@ -1105,18 +1105,33 @@ const curRange=b=>{ const t=b.target; if(!t||t.none) return null; return t.kind=
 const shellGeo=new THREE.CylinderGeometry(1,0.35,1,5); shellGeo.rotateX(Math.PI/2); let visCount=0; const fading=[];   // shells drawn as slivers along +Z
 function arcPos(sh,f){ const o=sh.o0, X0=o?o.x:sh.x0*S, Z0=o?o.z:sh.z0*S, y0=o?o.y:meshY(sh.x0,sh.z0)+.3, y1=meshY(sh.x1,sh.z1), apex=sh.r*APEX[sh.T.kind]*S; return new THREE.Vector3(X0+(sh.x1*S-X0)*f, y0+(y1-y0)*f+4*apex*f*(1-f), Z0+(sh.z1*S-Z0)*f); }
 const _sv=new THREE.Vector3();
-function placeSliver(sh,f){ const p=arcPos(sh,f); sh.vis.position.copy(p); if(sh.arc&&!sh.done) sh.arc.geometry.setDrawRange(0,UI.traj?Math.floor(f*36)+1:0);
+function placeSliver(sh,f){ const p=arcPos(sh,f); sh.vis.position.copy(p);
+  if(sh.mdl){ sh.mdl.position.copy(p); const q=arcPos(sh,Math.min(1,f+0.002)); if(q.distanceToSquared(p)>1e-10) sh.mdl.lookAt(q); const near=window.__CSON||camera.position.distanceTo(p)<30; sh.vis.visible=!near; sh.mdl.visible=near; } if(sh.arc&&!sh.done) sh.arc.geometry.setDrawRange(0,UI.traj?Math.floor(f*36)+1:0);
   { const u=sh.vis.userData, k=window.__CSON?1:Math.max(1,Math.min(14,camera.position.distanceTo(p)/90)); const kw=sh.side==='A'?k*0.4:k*0.5; sh.vis.scale.set(u.w*kw,u.w*kw,u.L*Math.min(k,2.5)); } _sv.copy(arcPos(sh,Math.min(1,f+0.004))).sub(p); if(_sv.lengthSq()<1e-8) _sv.copy(p).sub(arcPos(sh,Math.max(0,f-0.004))); sh.vis.lookAt(_sv.add(p)); }
+// close-up shell models (metres): projectile body with ogive, copper driving band and nose fuze, built per calibre; length from about 4 to 4.6 calibres
+const SHELL_M={};
+function shellModel(T){ const key=T.short; if(!SHELL_M[key]){ const r=T.cal/2000, L=r*2*(T.cal>=200?4.6:T.cal>=140?4.3:4.0), g=new THREE.Group();
+    const prof=[[0,0],[r*0.93,0],[r,L*0.03],[r,L*0.58]]; for(let k=1;k<=10;k++){ const a=k/10*Math.PI/2; prof.push([r*(0.36+0.64*Math.cos(a)),L*0.58+L*0.3*Math.sin(a)]); }
+    const body=new THREE.LatheGeometry(prof.map(([x,y])=>new THREE.Vector2(x,y)),24);
+    const paint=T.side==='G'?0x5a5e55:(T.kind==='gun'&&T.cal<100?0x2a2a28:0x9a8448);   // German field grey; British 18-pdr shrapnel dark; British HE yellow (representative colours)
+    const mB=new THREE.MeshStandardMaterial({color:paint,roughness:0.7,metalness:0.25,map:TEX.steel}), mCu=new THREE.MeshStandardMaterial({color:0xb5652e,roughness:0.35,metalness:0.9}), mFz=new THREE.MeshStandardMaterial({color:0xb8975a,roughness:0.3,metalness:0.9});
+    g.add(new THREE.Mesh(body,mB));
+    const band=new THREE.Mesh(new THREE.CylinderGeometry(r*1.035,r*1.035,L*0.05,24),mCu); band.geometry.translate(0,L*0.1,0); g.add(band);
+    if(T.side==='A'&&paint===0x9a8448){ const rb=new THREE.Mesh(new THREE.CylinderGeometry(r*1.005,r*1.005,L*0.035,24),new THREE.MeshStandardMaterial({color:0x8a2a20,roughness:0.6})); rb.geometry.translate(0,L*0.5,0); g.add(rb); }   // red band: filled HE
+    const fz=new THREE.Mesh(new THREE.CylinderGeometry(r*0.12,r*0.36,L*0.12,20),mFz); fz.geometry.translate(0,L*0.94,0); g.add(fz);
+    g.traverse(o=>{ if(o.isMesh){ o.geometry.translate(0,-L/2,0); o.geometry.rotateX(Math.PI/2); } });   // nose along +z
+    SHELL_M[key]=g; }
+  const m=SHELL_M[key].clone(); m.scale.setScalar(S); return m; }
 function launch(sh){ sh.launched=true; sh.rt=0; sh.rdur=Math.max((sh.tf-sh.t0)/Math.max(1,speed),1.6); if(sh.piece) sh.piece.recoil=1;
   if(sh.piece&&sh.piece.mesh&&!window.__CSON){ const m=sh.piece.mesh, inr=m.userData.barrel&&m.userData.barrel.userData.inner; m.rotation.y=sh.b.yaw; m.updateMatrixWorld(true);   // shells leave from the muzzle
     sh.o0=inr?inr.localToWorld(new THREE.Vector3(sh.T.barrel[0]*0.9*S,0,0)):m.getWorldPosition(new THREE.Vector3()); }
   const vf=sh.b.vf||1; { const ms=(1.8+sh.T.cal/55)*vf; if(sh.o0) addFx(starTex,sh.o0.x,sh.o0.y,sh.o0.z,ms*0.3,ms,0.085,1,'pop'); else addFx(starTex,sh.x0*S,meshY(sh.x0,sh.z0)+0.3*vf,sh.z0*S,ms*0.3,ms,0.085,1,'pop'); }
-  if(visCount<(LOW?60:360)){ visCount++; const m=new THREE.Mesh(shellGeo,new THREE.MeshBasicMaterial({color:sh.side==='A'?0xfff3a0:0xffb090,transparent:true,opacity:.95,depthWrite:false})); const w=0.14+sh.T.cal/1600, L=3+sh.T.cal/50; m.scale.set(w,w,L); m.userData.w=w; m.userData.L=L; m.renderOrder=7; fxRoot().add(m); sh.vis=m;
+  if(visCount<(LOW?60:360)){ visCount++; const m=new THREE.Mesh(shellGeo,new THREE.MeshBasicMaterial({color:sh.side==='A'?0xfff3a0:0xffb090,transparent:true,opacity:.95,depthWrite:false})); const w=0.14+sh.T.cal/1600, L=3+sh.T.cal/50; m.scale.set(w,w,L); m.userData.w=w; m.userData.L=L; m.renderOrder=7; fxRoot().add(m); sh.vis=m; sh.mdl=shellModel(sh.T); fxRoot().add(sh.mdl);
     if(!LOW&&!(typeof FOL!=='undefined'&&FOL.hideOv)){ const pts=[]; for(let i=0;i<=36;i++) pts.push(arcPos(sh,i/36)); sh.arc=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:sh.side==='A'?0xffd27a:0xff9a4a,transparent:true,opacity:.3,depthWrite:false})); sh.arc.geometry.setDrawRange(0,0); scene.add(sh.arc); } } }
-function impact(sh){ if(sh.vis){ if(sh.vis.parent) sh.vis.parent.remove(sh.vis); sh.vis.material.dispose(); visCount--; } if(sh.arc){ sh.arc.geometry.setDrawRange(0,UI.traj?37:0); fading.push({l:sh.arc,t:0}); }
+function impact(sh){ if(sh.mdl&&sh.mdl.parent) sh.mdl.parent.remove(sh.mdl); if(sh.vis){ if(sh.vis.parent) sh.vis.parent.remove(sh.vis); sh.vis.material.dispose(); visCount--; } if(sh.arc){ sh.arc.geometry.setDrawRange(0,UI.traj?37:0); fading.push({l:sh.arc,t:0}); }
   const y=meshY(sh.x1,sh.z1); heatDot(sh.x1,sh.z1,sh.T); addXH(sh.x1,sh.z1); featuredImpact(sh);
   if(effects.length<(LOW?80:480)){ addFx(starTex,sh.x1*S,y+2,sh.z1*S,2.5,8+sh.T.cal/9,.12,1,'pop'); addShock(sh.x1*S,y+1,sh.z1*S,1.5+sh.T.cal/45,.26); if(!LOW) addFx(smokeTex,sh.x1*S,y+3,sh.z1*S,5+sh.T.cal/35,16+sh.T.cal/8,2.4,.7); } }
-function clearShells(){ shells.forEach(s=>{ if(s.vis&&s.vis.parent) s.vis.parent.remove(s.vis); if(s.arc) scene.remove(s.arc); }); shells=[]; visCount=0; fading.forEach(f=>scene.remove(f.l)); fading.length=0; effects.forEach(e=>{ if(e.sp.parent) e.sp.parent.remove(e.sp); }); effects.length=0; heatC.getContext('2d').clearRect(0,0,OW,OH); ovDirty=true; clearXH(); if(FP.stats) resetFeatured(); featAcc=0; }
+function clearShells(){ shells.forEach(s=>{ if(s.mdl&&s.mdl.parent) s.mdl.parent.remove(s.mdl); if(s.vis&&s.vis.parent) s.vis.parent.remove(s.vis); if(s.arc) scene.remove(s.arc); }); shells=[]; visCount=0; fading.forEach(f=>scene.remove(f.l)); fading.length=0; effects.forEach(e=>{ if(e.sp.parent) e.sp.parent.remove(e.sp); }); effects.length=0; heatC.getContext('2d').clearRect(0,0,OW,OH); ovDirty=true; clearXH(); if(FP.stats) resetFeatured(); featAcc=0; }
 
 // ================= order of battle (illustrative positions) =================
 function setupOOB(){
@@ -1385,7 +1400,7 @@ function updSubUnits(){ const camY=camera.position.y, on=UI.bn&&UI.sub2&&camY<70
     if(simple){ const a=PH.troop(b.gp,tNow), c=PH.troop(b.gp,tNow-120); b.spd=(a===null||c===null)?0:Math.abs(a-c)/120; }
     else if(b.oT===null||b.oT===undefined||tNow<b.oT||jumpA){ b.oT=tNow; b.oPrev=o; b.spd=0; } else if(tNow-b.oT>=60){ b.spd=Math.abs(o-b.oPrev)/(tNow-b.oT); b.oPrev=o; b.oT=tNow; }
     const want=(PH.n>=1&&tNow>=300&&b.spd<0.08)?1:0; b.cons=(b.cons||0)+(want-(b.cons||0))*(jumpA||!playing?1:0.04); b.o=o;
-    const t1=TRL.filter(t=>t<=o-15); b.T1=t1.length?t1[t1.length-1]:null; b.T2=t1.length>1?t1[t1.length-2]:b.T1; }
+    const t1=TRL.filter(t=>t<=o-15&&t>=o-110); b.T1=t1.length?t1[t1.length-1]:null; b.T2=b.T1; }   // men only drop into a captured trench close behind the front; they never pull back to a distant one
   SUB.men.forEach((m,i)=>{ const b=m.b;
     if(PH.n===0&&UI.bn){ // night of 8–9 April: the battalion marches in a column (about 1 m per man, two abreast) along its route and through its subway, then each man drops into his trench
       if(tNow<b.t0){ P.setXYZ(i,0,-999,0); return; } const Lt=b.L[b.L.length-1], D=(tNow-b.t0)/(b.t1-b.t0)*Lt, dm=D-m.k*1.0;
@@ -1499,7 +1514,7 @@ function clearXH(){ xhN=0; xhGeo.setDrawRange(0,0); }
 // ================= featured positions: German front trench + dugout, German battery =================
 const figGeoB=new THREE.CylinderGeometry(0.2*S,0.24*S,1.25*S,8), figGeoH=new THREE.SphereGeometry(0.15*S,10,8);
 const LODH=[];
-function figure(color,ghost){ if(!ghost){ const h=human({side:'G',kit:'rifle'}); h.scale.setScalar(S); poseHuman(h,'stand',0); LODH.push(h); h.userData.m={color:{setHex(){}}}; return h; }
+function figure(color,ghost,kit){ if(!ghost){ const h=human({side:'G',kit:kit===undefined?'rifle':kit}); h.scale.setScalar(S); poseHuman(h,'stand',0); LODH.push(h); h.userData.m={color:{setHex(){}}}; return h; }
   const g=new THREE.Group(); const m=new THREE.MeshLambertMaterial({color,transparent:!!ghost,opacity:ghost?0.6:1,depthTest:!ghost});
   const b=new THREE.Mesh(figGeoB,m); b.position.y=0.62*S; const h=new THREE.Mesh(figGeoH,m); h.position.y=1.42*S; g.add(b,h); g.userData.m=m; if(ghost){ b.renderOrder=h.renderOrder=9; } return g; }
 const bagGeo=(function(){ const g=new THREE.BoxGeometry(0.6,0.28,0.36,6,3,4), P=g.attributes.position;   // pillow shape: squeezed toward the seams
@@ -1541,7 +1556,7 @@ function buildFB(){
     for(let k=0;k<4;k++){ const r=3.6, n=36; for(let i=0;i<n;i++){ const a=i/n*Math.PI*2+(k%2)*0.09; if(Math.cos(a)>0.75) continue;   // opening toward the rear (east)
       L.push([(gx+r*Math.cos(a))*S,gy+(0.14+0.28*k)*S,(gz+r*Math.sin(a))*S,-a+Math.PI/2]); } }
     for(let i=0;i<24;i++){ const a=i/24*Math.PI*2; if(Math.cos(a)>0.75) continue; R.push([(gx+3.15*Math.cos(a))*S,gy+0.55*S,(gz+3.15*Math.sin(a))*S,-a+Math.PI/2,1.6]); }
-    for(let c=0;c<4;c++){ const f=figure(0x5f6350); const ox=1.2+0.5*(c%2), oz=(c-1.5)*0.9; f.position.set((gx+ox)*S,gy,(gz+oz)*S); scene.add(f); FB.crew.push({f,pi,alive:true}); }
+    for(let c=0;c<4;c++){ const f=figure(0x5f6350,false,null); const ox=0.4+0.9*(c>>1), oz=(c%2?1:-1)*1.35; f.position.set((gx+ox)*S,gy,(gz+oz)*S); scene.add(f); FB.crew.push({f,pi,alive:true,p0:f.position.clone()}); }
   });
   FB.parts=[bagsMesh(L)]; const rv=bagsMesh(R,rev); rv.scale.y=1; FB.parts.push(rv);
   b.trueScale=true; const p0=b.pieces[0]; callout('Sandbag wall around the gun pit',b.x-3.6,b.z+p0.oz,1.3); callout('Timber revetment',b.x+0.3,b.z+p0.oz-3.1,1.0); callout('Gun crew',b.x+1.5,b.z+b.pieces[1].oz,1.9);
@@ -1552,7 +1567,7 @@ function resetFeatured(){
   FP.ents.forEach(e=>{ e.blocked=false; e.m.material.color.setHex(0x080605); });
   FP.stats={rounds:0,in50:0,inTrench:0,near:[0,0,0],hit:0,blocked:0};
   const b=FB.b; b.pieces.forEach(p=>{ if(!p.alive){ p.alive=true; p.mesh.rotation.x=0; p.mesh.userData.mats.forEach(q=>q.color.multiplyScalar(1/0.3)); } }); b.updLabel();
-  FB.crew.forEach(c=>{ c.alive=true; c.f.rotation.z=0; c.f.userData.m.color.setHex(0x5f6350); });
+  FB.crew.forEach(c=>{ if(!c.alive){ if(c.p0) c.f.position.copy(c.p0); poseHuman(c.f,c.pose||'stand',0); } c.alive=true; c.f.rotation.z=0; });
   FB.stats={rounds:0,bins:[0,0,0,0,0],gunsLost:0,crew:0,start:b.pieces.length}; freezeDone={fp:false,fb:false};
 }
 // damage model at the featured positions (MODEL — illustrative rules, see "How this map was built")
@@ -1568,7 +1583,7 @@ function featuredImpact(sh){ const x=sh.x1,z=sh.z1,T=sh.T;
     const bi=dn<5?0:dn<10?1:dn<25?2:dn<50?3:dn<100?4:-1; if(bi>=0) FB.stats.bins[bi]++;
     if(np&&np.alive&&dn<5){ np.alive=false; FB.stats.gunsLost++; np.mesh.rotation.x=0.35; np.mesh.userData.mats.forEach(q=>q.color.multiplyScalar(0.3)); b.updLabel();
       log(`<span class="ge">Featured German battery</span>: a gun knocked out (${T.short} round landed ${dn.toFixed(1)} m away)`); }
-    FB.crew.forEach(c=>{ if(!c.alive) return; const p=b.pieces[c.pi]; const d=dist(x,z,b.x+1.4,b.z+p.oz); const k=d<5?0.7:(d<T.lethal?0.12:0); if(Math.random()<k){ c.alive=false; FB.stats.crew++; c.f.rotation.z=1.45; c.f.userData.m.color.setHex(0x3a2a22); } }); }
+    FB.crew.forEach(c=>{ if(!c.alive) return; const p=b.pieces[c.pi]; const d=dist(x,z,b.x+1.4,b.z+p.oz); const k=d<5?0.7:(d<T.lethal?0.12:0); if(Math.random()<k){ c.alive=false; FB.stats.crew++; poseHuman(c.f,'down',0); c.f.position.z+=(c.f.position.z>(b.z+p.oz)*S?1:-1)*0.6*S; } }); }
 }
 // featured barrage on the trench section: 1 field gun per 10 m of front (sources) × 4 rounds/min (18-pdr sustained rate)
 let featAcc=0; const FEAT_RPM=(60/10)*4;
@@ -1640,6 +1655,7 @@ const HUM=(function(){
   for(let i=0;i<n*4;i++){ skI[i]=si[i]; skW[i]=sw[i]/255; }
   geo.setAttribute('skinIndex',new THREE.BufferAttribute(skI,4)); geo.setAttribute('skinWeight',new THREE.BufferAttribute(skW,4));
   const mat=new Uint8Array(b64(D.mat)), sp=new Uint8Array(b64(D.sp)), w1=new Float32Array(n*4), w2=new Float32Array(n*4), spa=new Float32Array(n);
+  { const hb=new Set(D.bones.map((b,i)=>/^(wrist|finger|metacarpal|thumb)/.test(b)?i:-1).filter(i=>i>=0)); for(let i=0;i<n;i++){ if(mat[i]!==0) continue; let bw=0,bi=-1; for(let k=0;k<4;k++){ if(skW[i*4+k]>bw){ bw=skW[i*4+k]; bi=skI[i*4+k]; } } if(hb.has(bi)) mat[i]=4; } }   // hands: dark leather gloves
   const aoA=new Uint8Array(b64(D.ao)); for(let i=0;i<n;i++){ const m=mat[i]; if(m<4) w1[i*4+m]=1; else if(m>4) w2[i*4+m-4]=1; w2[i*4]=aoA[i]/255; spa[i]=sp[i]/255; }
   geo.setAttribute('aW1',new THREE.BufferAttribute(w1,4)); geo.setAttribute('aW2',new THREE.BufferAttribute(w2,4)); geo.setAttribute('aSp',new THREE.BufferAttribute(spa,1));
   { const ex=new Uint8Array(b64(D.ex)), ea=new Float32Array(n*4); for(let i=0;i<n;i++){ for(let k=0;k<3;k++) ea[i*4+k]=ex[i*3+k]/255; ea[i*4+3]=spa[i]; } geo.setAttribute('aEx',new THREE.BufferAttribute(ea,4)); geo.deleteAttribute('aSp'); }
@@ -1673,7 +1689,7 @@ void main() {`)
   float wv=tri(wool,vRest,rn,5.0), gr=tri(grime,vRest,rn,0.9);
   float band=fract(vSp*1.0); float edge=smoothstep(0.0,0.05,band)*(0.7+0.3*band);
   vec3 put=cPut*mix(1.0,0.62+0.42*edge,putBand);
-  vec3 c=cSkin*vW1.x+cTunic*vW1.y+cTrou*vW1.z+put*vW1.w+cHair*vW2.y+cBrow*vW2.z+cLips*vW2.w;
+  vec3 c=cSkin*vW1.x+cTunic*vW1.y+cTrou*vW1.z+put*vW1.w+cHair*vW2.y+cBrow*vW2.z+cLips*vW2.w+vec3(0.16,0.12,0.09)*clamp(1.0-(vW1.x+vW1.y+vW1.z+vW1.w+vW2.y+vW2.z+vW2.w),0.0,1.0);
   c*=mix(1.0,0.88+0.24*gr,cloth);   // mud and wear
   float gf=tri(grime,vRest,rn,1.7), gs=tri(wool,vRest,rn,30.0);
   // skin: blotches, wind-reddened nose and cheeks, stubble on the jaw, dirt
@@ -2287,11 +2303,11 @@ function setShotScene(id){ const want=(id==='fp'||id==='fb')?id:null; if(want===
     FP.ents.forEach(e=>DIO.place(sc(propDugout()),-1.25,-e.u,0));
     FP.sentries.forEach(q=>{ if(q.yOrig===undefined) q.yOrig=q.y0; q.y0=DIO.y(q.x,q.z)+0.55*S; if(q.alive) q.f.position.y=q.y0; q.f.rotation.y=Math.atan2(dir[0],dir[1]); poseHuman(q.f,'aim',0); }); }
   else { const b=FB.b; buildDiorama(b.x,b.z,[1,0],{craters:34,flatW:b.pieces.map(p=>[0,p.oz,6])});
-    FB.crew.forEach(c=>{ c.f.rotation.y=-Math.PI/2+(hash(c.pi,c.f.id)-0.5); poseHuman(c.f,['stand','kneel','stand','kneel'][FB.crew.indexOf(c)%4],0); }); }
+    FB.crew.forEach(c=>{ c.f.rotation.y=-Math.PI/2+(hash(c.pi,c.f.id)-0.5); c.pose=['crouch','kneel','crouch','kneel'][FB.crew.indexOf(c)%4]; if(c.alive) poseHuman(c.f,c.pose,0); }); }
   cineShot(); }
 function cineShot(){ if(!CS.ok||!shotScene) return; CS.enter(); document.body.classList.add('tour');
-  if(shotScene==='fp'){ CS.take([DIO.group,...FP.sentries.map(q=>q.f)]); const q=FP.sentries[2]; CS.focus(q.f,[-FP.nx,-FP.nz],{a:0.55,d:4.2,h:1.5,lookH:0.9,orbit:0.02,dolly:-0.08,fov:36}); }
-  else { const b=FB.b; CS.take([DIO.group,b.group,...FB.parts,...FB.crew.map(c=>c.f)]); CS.focus(FB.crew[1].f,[-1,0],{a:0.8,d:7.5,h:1.7,lookH:0.9,orbit:0.025,dolly:-0.1,fov:40}); } }
+  if(shotScene==='fp'){ CS.take([DIO.group,...FP.sentries.map(q=>q.f)]); const q=FP.sentries[2]; CS.focus(q.f,[-FP.nx,-FP.nz],{a:Math.PI-0.45,d:4.5,h:2.6,lookH:1.2,orbit:0.01,dolly:-0.04, fov:44});  }
+  else { const b=FB.b; CS.take([DIO.group,b.group,...FB.parts,...FB.crew.map(c=>c.f)]); CS.focus(FB.crew[1].f,[-1,0],{a:0.8,d:7.5,h:2.7,lookH:0.6,orbit:0.025,dolly:-0.1,fov:40}); } }
 // ================= cinematic close-ups ("cutscenes"): a second renderer with its own lighting, contact shadows (SSAO), depth of field and film grade =================
 // The map renderer uses a logarithmic depth buffer for its 20 km view; that rules out screen-space shading, so close-ups get their own renderer and scene.
 const CS=(function(){
@@ -2360,7 +2376,7 @@ const CS=(function(){
   C.taken=[]; function take(list){ for(const o of list) if(o){ sc.add(o); if(!C.taken.includes(o)) C.taken.push(o); } }
   window.__CSS=sc;
   function enter(){ if(C.on) return; C.on=true; window.__CSON=true; cv.style.display='block'; resize(); document.body.classList.add('cine'); C.t=0; }
-  function exit(){ if(!C.on) return; C.on=false; window.__CSON=false; document.body.classList.remove('tour'); for(const o of [...sc.children]) if(o.isSprite&&!smoke.includes(o)&&!bursts.includes(o)) scene.add(o); for(const e of shocks) if(e.m.parent===sc) scene.add(e.m); for(const q of shells) if(q.vis&&q.vis.parent===sc) scene.add(q.vis); cv.style.display='none'; document.body.classList.remove('cine');
+  function exit(){ if(!C.on) return; C.on=false; window.__CSON=false; document.body.classList.remove('tour'); for(const o of [...sc.children]) if(o.isSprite&&!smoke.includes(o)&&!bursts.includes(o)) scene.add(o); for(const e of shocks) if(e.m.parent===sc) scene.add(e.m); for(const q of shells){ if(q.vis&&q.vis.parent===sc) scene.add(q.vis); if(q.mdl&&q.mdl.parent===sc) scene.add(q.mdl); } cv.style.display='none'; document.body.classList.remove('cine');
     for(const o of C.taken) if(o.parent===sc) scene.add(o); C.taken=[]; }
   function setStep(st,hero,dir){ if(DIO.group) trueTerrain(DIO.cx,DIO.cz); C.t=0; C.dir=dir; C.hero=hero; const s=Object.assign({a:0.6,d:3.0,h:1.45,lookH:1.35,orbit:0.03,dolly:-0.1,fov:34,focus:'hero'},st.cam||{});
     if(!st.cam&&st.scene&&st.scene.trench&&(st.from===undefined||Math.abs((st.f||0)-(st.from||0))<1)){ s.a=1.25; s.d=2.4; s.h=1.55; s.lookH=1.3; }
@@ -2553,7 +2569,10 @@ function freezeOn(sh,kind){
     <p><b>This round:</b> ${missTxt}. ${outcome}</p>
     <p class="small">Figures assume the round is aimed straight at the target. Because the odds of one round hitting are so low, both sides fired thousands of them.</p>`, sh};
   // camera onto the strike point
-  camTo(sh.x1,sh.z1,-22,30,22,1.2); if(CS.ok&&CS.on) CS.focusPoint(sh.x1,sh.z1,kind==='fp'?[-FP.nx,-FP.nz]:[-1,0],{a:0.9,d:6,h:2.2,lookH:0.3,orbit:0,dolly:0,fov:38}); renderCard(); }
+  // hold the shell 12 m short of its strike point and look at it from the side of its path
+  { const ff=Math.max(0.5,1-12/Math.max(sh.r,24)); sh.frz=ff; placeSliver(sh,ff); const P=arcPos(sh,ff), px=P.x/S, pz=P.z/S, ux=(sh.x1-sh.x0)/sh.r, uz=(sh.z1-sh.z0)/sh.r, hA=(P.y-(DIO.group?DIO.y(px,pz):meshY(px,pz)))/S;
+    camTo(px,pz,-uz*20-ux*8,ux*20-uz*8,Math.max(6,hA),1.2); if(CS.ok&&CS.on) CS.focusPoint(px,pz,[-uz,ux],{a:0.35,d:2.6,h:hA+0.25,lookH:hA,orbit:0,dolly:0,fov:30}); }
+  renderCard(); }
 document.getElementById('cardCont').onclick=()=>{ frozen=null; playing=true; playB.textContent='⏸ Pause'; if(curShot) curShot.go(); if(CS.ok&&CS.on) cineShot(); renderCard(); };
 document.getElementById('ivaB').onclick=()=>{ showIVA=!showIVA; renderCard(); };
 document.getElementById('tourB').onchange=e=>{ tourOn=e.target.checked; if(tourOn){ curShot=null; } else { speed=userSpeed(); } renderCard(); };
@@ -2580,7 +2599,7 @@ function loop(now){ if(!window.__ready){ window.__ready=1; setTimeout(()=>{ cons
   }
   updShocks(dt); updTracers(dt); updSnow(dt); updFollow(dt); updBattalions(dt); trackColumns(dt); orbitShot(dt); updUnitLabels(); updSubUnits(); updFight(dt); updZeroBanner(); if((window.__fn||0)%5===0) updCasPane();
   { const near=camera.position.distanceTo(controls.target)<45; if(near!==window.__shNear){ window.__shNear=near; renderer.shadowMap.needsUpdate=true; } renderer.shadowMap.autoUpdate=near;
-    window.__fn=(window.__fn||0)+1; if(window.__fn%10===0) LODH.forEach(h=>{ const far=camera.position.distanceTo(h.position)>160; if(far&&h.visible){ h.visible=false; h.userData.lodHid=true; } else if(!far&&h.userData.lodHid){ h.visible=true; h.userData.lodHid=false; } }); }
+    window.__fn=(window.__fn||0)+1; if(window.__fn%10===0) LODH.forEach(h=>{ const far=!window.__CSON&&camera.position.distanceTo(h.position)>160; if(far&&h.visible){ h.visible=false; h.userData.lodHid=true; } else if(!far&&h.userData.lodHid){ h.visible=true; h.userData.lodHid=false; } }); }
   { const hideOv=typeof FOL!=='undefined'&&FOL.hideOv; troopMeshes.forEach(m=>m.visible=UI.troop&&!hideOv); xhPts.visible=UI.xh||(tourOn&&!!curShot&&['adv','fp'].includes(curShot.id)); TRENCH3D.visible=camera.position.y<260; } skyDome.position.copy(camera.position); updSunShadow();
   for(let i=effects.length-1;i>=0;i--){ const e=effects[i]; e.t+=dt; e.fr=(e.fr||0)+1; const f=Math.min(e.fr<3?0.95:1,e.t/e.life); if(e.t>=e.life&&e.fr>=3){ if(e.sp.parent) e.sp.parent.remove(e.sp); e.sp.material.dispose(); effects.splice(i,1); continue; } if(e.mode==='pop'){ const s=f<0.12?e.s0+(e.s1-e.s0)*(f/0.12):e.s1*(1+0.08*(f-0.12)); e.sp.scale.set(s,s,1); e.sp.material.opacity=e.op*Math.pow(1-f,2.5); } else { const s=e.s0+(e.s1-e.s0)*Math.sqrt(f); e.sp.scale.set(s,s,1); e.sp.material.opacity=e.op*(1-f); } if(e.sp.material.map===smokeTex) e.sp.position.y+=dt*2.5; }
   for(let i=fading.length-1;i>=0;i--){ const f=fading[i]; f.t+=dt; f.l.material.opacity=.28*(1-f.t/1.5); if(f.t>=1.5){ scene.remove(f.l); f.l.geometry.dispose(); fading.splice(i,1); } }
