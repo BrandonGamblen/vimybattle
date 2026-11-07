@@ -597,7 +597,7 @@ let ovDirty=true,lastComp=0;
 let LOW=false; try{ LOW=localStorage.getItem('vimyLow')==='1'; }catch(e){}
 const UI={side:true,snow:true,obj:true,div:true,rings:false,cont:false,reach:false,heat:true,traj:true,sub:true,grid:true,lbl:true};
 const capC=document.createElement('canvas'); capC.width=OW; capC.height=OH;
-function composite(){ const c=ovC.getContext('2d'); c.clearRect(0,0,OW,OH); if(UI.side) c.drawImage(sideC,0,0); c.drawImage(capC,0,0); if(typeof mineC!=='undefined') c.drawImage(mineC,0,0); if(UI.reach) c.drawImage(reachC,0,0); if(UI.heat) c.drawImage(heatC,0,0); ovTex.needsUpdate=true; ovDirty=false; }
+function composite(){ const c=ovC.getContext('2d'); c.clearRect(0,0,OW,OH); if(UI.side){ c.drawImage(sideC,0,0); c.globalCompositeOperation='destination-out'; c.drawImage(capC,0,0); c.globalCompositeOperation='source-over'; c.globalAlpha=0.17*255/255*0.9; c.drawImage(capC,0,0); c.globalAlpha=1; } if(typeof mineC!=='undefined') c.drawImage(mineC,0,0); if(UI.reach) c.drawImage(reachC,0,0); if(UI.heat) c.drawImage(heatC,0,0); ovTex.needsUpdate=true; ovDirty=false; }
 function recomputeReach(){ const c=reachC.getContext('2d'), img=c.createImageData(OW,OH), d=img.data;
   const live=batteries.filter(b=>b.alive()&&!b.suppressed).map(b=>[b.x,b.z,b.T.range**2,b.side==='A']);
   for(let py=0;py<OH;py++){ const z=(py+.5)/OH*2*MZ-MZ; for(let px=0;px<OW;px++){ const x=(px+.5)/OW*2*MX-MX; let f=false,g=false;
@@ -1023,7 +1023,7 @@ let capPolys=[];
 function drawCaptured(){ const c=capC.getContext('2d'); c.clearRect(0,0,OW,OH); const P=(x,z)=>[(x+MX)/(2*MX)*OW,(z+MZ)/(2*MZ)*OH];
   const back=offLineF(CORPS_S0,CORPS_S1,()=>-30), front=offLineF(CORPS_S0,CORPS_S1,p=>Math.max(-30,PH.troop(p,tNow)));
   const polys=[[...back,...front.slice().reverse()],...capPolys];
-  c.fillStyle='rgba(70,110,200,0.55)'; for(const poly of polys){ c.beginPath(); poly.forEach(([x,z],i)=>{ const q=P(x,z); i?c.lineTo(q[0],q[1]):c.moveTo(q[0],q[1]); }); c.closePath(); c.fill(); }
+  c.fillStyle='rgb(70,100,190)'; for(const poly of polys){ c.beginPath(); poly.forEach(([x,z],i)=>{ const q=P(x,z); i?c.lineTo(q[0],q[1]):c.moveTo(q[0],q[1]); }); c.closePath(); c.fill(); }
   ovDirty=true; markCaptured(); }
 // German batteries inside the blue area are captured
 function markCaptured(){ const c=capC.getContext('2d'); capData=c.getImageData(0,0,OW,OH).data; capVer++; for(const b of batteries){ if(b.side!=='G'||b.withdrawn) continue; const px=Math.round((b.x+MX)/(2*MX)*OW), py=Math.round((b.z+MZ)/(2*MZ)*OH);
