@@ -36,7 +36,7 @@ table{width:100%;border-collapse:collapse;font-size:12px}td{padding:2px 3px;bord
 .plc{position:absolute;transform:translate(-50%,-50%);font:600 11.5px 'IBM Plex Sans';color:#fff;text-shadow:0 0 3px #000,0 0 6px #000;white-space:nowrap}
 .feat{position:absolute;transform:translate(-50%,-50%);font:italic 600 12px 'IBM Plex Sans';color:#ffe39a;text-shadow:0 0 3px #000,0 0 6px #000;white-space:nowrap}
 .div{position:absolute;transform:translate(-50%,-50%);font:700 12px 'IBM Plex Sans';padding:2px 6px;border-radius:3px;white-space:nowrap;letter-spacing:.3px}
-.div.A{background:rgba(40,70,140,.8);color:#fff}.div.G{background:rgba(150,45,35,.8);color:#fff}
+.div.A{background:none;color:#cfe0ff;text-shadow:0 0 3px #000,0 0 3px #000,0 1px 2px #000}.div.G{background:rgba(150,45,35,.8);color:#fff}
 .obj{position:absolute;transform:translate(-50%,-50%);font:700 11px 'IBM Plex Sans';padding:1px 5px;border-radius:3px;white-space:nowrap}
 #tip{position:fixed;pointer-events:none;z-index:6;background:rgba(10,10,8,.85);border:1px solid #777;border-radius:4px;padding:4px 7px;font:12px 'IBM Plex Mono';display:none}
 #log{font:11.5px 'IBM Plex Mono';color:#cfcab6;max-height:110px;overflow:auto;background:#1a1b17;border:1px solid var(--line);border-radius:4px;padding:5px}
@@ -668,7 +668,7 @@ const SUBW=[]; const subGroup=[];
       const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(cp,3));
       const dl=new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:0xd9d6cc,transparent:true,opacity:.3,depthTest:false,depthWrite:false})); dl.renderOrder=5; scene.add(dl); subGroup.push(dl); }
     for(const [q,c] of [[w.entry,0x2a6a2a],[w.exit,0xd0b030]]){ const m=new THREE.Mesh(new THREE.CircleGeometry(14*S,16),new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.9,depthWrite:false})); m.rotation.x=-Math.PI/2; m.position.set(q[0]*S,meshY(q[0],q[1])+0.3,q[1]*S); scene.add(m); subGroup.push(m); }
-    if(w.name){ const m=pts[Math.floor(pts.length/2)]; addLabel('plc',w.name+' (approx.) · about 10 m deep',m[0],m[1],'sub',2).style.cssText+='background:rgba(28,20,12,.75);color:#e8d9b0'; } }
+    if(w.name){ const m=pts[Math.floor(pts.length/2)]; addLabel('plc',w.name+' (10m)',m[0],m[1],'sub',2).style.cssText+='background:rgba(28,20,12,.75);color:#e8d9b0'; } }
   SUBW.grange=SUBW.find(w=>w.id==='grange'); }
 // mine craters: 19 crater groups along no man's land by early 1917 (source); group positions and sizes illustrative
 const MINE=[]; { for(let g=0;g<19;g++){ const sG=CORPS_S0+200+(g+hash(g,41)*0.6)*(DIVS[2].s1-CORPS_S0-300)/19, p=gfAt(sG), n=2+Math.floor(hash(g,43)*3);
@@ -681,11 +681,11 @@ const mineC=document.createElement('canvas'); mineC.width=OW; mineC.height=OH;
 PLACES.forEach(([n,x,z])=>addLabel('plc',n,x,z,'plc',3));
 addLabel('feat','Hill 145 · today the Vimy Memorial',HILL145[0],HILL145[1],'feat',9);
 
-{ const d=DIVS[1],p=polyInfo(L_RED,...offPt((d.s0+d.s1)/2,900)); const q=offPt((d.s0+d.s1)/2,900); addLabel('feat','La Folie Farm (approx.)',q[0],q[1],'feat',7); }
-{ const d=DIVS[2],q=offPt((d.s0+d.s1)/2,1000); addLabel('feat','Les Tilleuls (approx.)',q[0],q[1],'feat',7); }
-addLabel('feat','Bois de la Folie (approx.)',150,-380,'feat',5);
+{ const d=DIVS[1],p=polyInfo(L_RED,...offPt((d.s0+d.s1)/2,900)); const q=offPt((d.s0+d.s1)/2,900); addLabel('feat','La Folie Farm',q[0],q[1],'feat',7); }
+{ const d=DIVS[2],q=offPt((d.s0+d.s1)/2,1000); addLabel('feat','Les Tilleuls',q[0],q[1],'feat',7); }
+addLabel('feat','Bois de la Folie',150,-380,'feat',5);
 addLabel('feat','Douai Plain',3600,-1500,'feat',4);
-addLabel('feat','Zouave Valley (approx.)',-3300,-1700,'feat',4);
+addLabel('feat','Zouave Valley',-3300,-1700,'feat',4);
 { const [x,z]=offPt((DIVS[3].s0+DIVS[3].s1)/2,-60); addLabel('feat',"No man's land",x,z,'feat',3); }
 
 // ================= sprites / effects =================
@@ -952,7 +952,7 @@ function updGermanState(){ for(const b of batteries){ if(b.side!=='G') continue;
 // the German third position, shown in the last phase
 const g3Mesh=(()=>{ const pts=[]; for(let i=0;i<L_G3.length-1;i++){ const [ax,az]=L_G3[i],[bx,bz]=L_G3[i+1], n=Math.ceil(Math.hypot(bx-ax,bz-az)/60); for(let k=0;k<n;k++){ if(k%3===2) continue; pts.push([[ax+(bx-ax)*k/n,az+(bz-az)*k/n],[ax+(bx-ax)*(k+1)/n,az+(bz-az)*(k+1)/n]]); } }
   const G=new THREE.Group(); pts.forEach(seg=>{ const m=ribbon(seg,30,0xc03028,0.85,0.6); scene.remove(m); G.add(m); }); G.visible=false; scene.add(G); return G; })();
-const g3Lbl=addLabel('feat','German third position: Oppy–Méricourt line and Avion Switch (approx.)',L_G3[4][0]+300,L_G3[4][1],'obj',6); g3Lbl.style.cssText+='background:rgba(120,20,16,.75);color:#fff';
+const g3Lbl=addLabel('feat','German third position: Oppy–Méricourt line and Avion Switch',L_G3[4][0]+300,L_G3[4][1],'obj',6); g3Lbl.style.cssText+='background:rgba(120,20,16,.75);color:#fff';
 // men moving through the subways on the night of 8–9 April (blue dots)
 const subDots=(()=>{ const n=SUBW.length*14, g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(n*3),3));
   const p=new THREE.Points(g,new THREE.PointsMaterial({color:0x7fb2ff,size:4,sizeAttenuation:false,transparent:true,opacity:.95,depthTest:false})); p.renderOrder=6; p.visible=false; scene.add(p); return p; })();
@@ -2057,7 +2057,7 @@ function propDugout(){ const g=new THREE.Group(); bx(1.4,1.7,0.12,0x5a4630,0,0.8
 function propBoxes(){ const g=new THREE.Group(); for(let i=0;i<5;i++) bx(0.5,0.3,0.32,0x5b4a30,(i%3)*0.55-0.5,0.15+Math.floor(i/3)*0.3,0,g); return g; }
 function propGun60(){ const g=makePiece(TYPES.a60,'A'); g.scale.setScalar(1/S); return g; }
 
-// ---- the men. Every fact in the text is from the sources listed with each man; places marked (approx.) are placed by sector, not by a map reference.
+// ---- the men. Every fact in the text is from the sources listed with each man; places marked are placed by sector, not by a map reference.
 const MEN=[
  {id:'macdowell',name:'Thain Wendell MacDowell',rank:'Captain',unit:'38th (Ottawa) Battalion · 12th Brigade · 4th Division',kind:'officer',kit:'pistol',
   facts:[['Born','16 September 1890, Lachute, Quebec; grew up near Brockville, Ontario'],['Before the war','BA, University of Toronto, 1914'],['At Vimy','Aged 26. Commands a company'],['Award','Victoria Cross'],['Afterwards','Executive of mining and chemical companies; commanded the Frontenac Regiment; died 28 March 1960, buried in Brockville']],
