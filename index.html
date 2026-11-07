@@ -1446,10 +1446,10 @@ function updSubUnits(){ const camY=camera.position.y, on=UI.bn&&UI.sub2&&camY<70
 // Canadian Corps, 9–12 April: 10,602 casualties, 3,598 killed, 7,004 wounded. German: about 20,000 casualties (Canadian Encyclopedia estimate), about 4,000 prisoners.
 // How they are spread over time, and which men on the map are hit, is illustrative.
 const CAS_C=10602, CAS_CK=3598, CAS_G=20000, CAS_GP=4000;
-const CASF=[[0,0],[3600,0.30],[14400,0.55],[45000,0.75],[86400,0.85],[172800,0.92],[257400,0.93],[270000,1]];   // share of Canadian casualties by time
+const CASF=[[0,0],[3600,0.25],[14400,0.45],[50400,0.6],[153000,0.727],[257400,0.88],[270000,1]];   // 7,707 of the 10,602 by the end of 10 April (two days' fighting); the rest on 11–12 April and the Pimple; shape within each day illustrative   // share of Canadian casualties by time
 function casF(t){ if(t<=0) return 0; for(let i=1;i<CASF.length;i++) if(t<=CASF[i][0]){ const [a,fa]=CASF[i-1],[b,fb]=CASF[i]; return fa+(fb-fa)*(t-a)/(b-a); } return 1; }
 function casFinv(u){ for(let i=1;i<CASF.length;i++) if(u<=CASF[i][1]){ const [a,fa]=CASF[i-1],[b,fb]=CASF[i]; return a+(b-a)*(u-fa)/((fb-fa)||1); } return 270000; }
-const PDIV=[0.45,0.45,0.33,0.33,0.25,0.25,0.27,0.27];   // share of each brigade's men shown who are hit (4th Division heaviest; illustrative)
+const PDIV=[0.38,0.38,0.26,0.26,0.2,0.2,0.22,0.22];   // share of each brigade's men shown who are hit (4th Division heaviest; illustrative)
 SUB.men.forEach((m,i)=>{ if(hash(i,301)<PDIV[m.b.bi]){ m.tHit=casFinv(hash(i,302)); m.killed=hash(i,303)<CAS_CK/CAS_C; } });
 GER.forEach((g,i)=>{ g.fate=hash(i,311)<0.45?'x':'gone'; g.prepHit=g.o===0&&hash(i,312)<0.1?-7*DAY+hash(i,313)*6.5*DAY:null; });
 const xTex=(()=>{ const c=document.createElement('canvas'); c.width=c.height=32; const g=c.getContext('2d'); g.lineCap='round';
@@ -1458,14 +1458,20 @@ const mkX=(n,col)=>{ const g=new THREE.BufferGeometry(); g.setAttribute('positio
   const p=new THREE.Points(g,new THREE.PointsMaterial({map:xTex,color:col,size:7,sizeAttenuation:false,depthTest:false,transparent:true})); p.renderOrder=8; p.frustumCulled=false; p.visible=false; scene.add(p); return p; };
 const XA=mkX(SUB.men.length,0x8fbcff), XG=mkX(GER.length,0xff8a76);
 const CAS={a:0,ak:0,g:0,gp:0};
-function updCasPane(){ const el=document.getElementById('casBox'); if(!el) return; const f=casF(tNow), fG=Math.min(1,casF(tNow)*1.02);
+function updCasPane(){ const el=document.getElementById('casBox'); if(!el) return;
+  // counts worked out here so they are right at any camera height
+  { let a=0; if(PH.n>=1) for(const m of SUB.men) if(m.tHit!==undefined&&tNow>=m.tHit) a++; CAS.a=a;
+    let g=0,gp=0; const wd=PH.n===5&&tNow>=T_WD; GER.forEach(q=>{ let taken=false; if(capData){ const px=Math.round((q.x+MX)/(2*MX)*OW), py=Math.round((q.z+MZ)/(2*MZ)*OH); taken=px>=0&&py>=0&&px<OW&&py<OH&&capData[(py*OW+px)*4+3]>20; }
+      const prepX=q.prepHit!==null&&tNow>=q.prepHit&&PH.n!==5; if(prepX||(taken&&q.fate==='x')) g++; else if(taken||wd) gp++; }); CAS.g=g; CAS.gp=gp; } const f=casF(tNow), n=v=>Math.round(v).toLocaleString();
   el.innerHTML=`<table>
-  <tr><td colspan=2 class="small" style="color:var(--dim)">Whole battle, 9–12 April (estimates, spread over time)</td></tr>
-  <tr><td>Canadian casualties</td><td class="mono">${Math.round(CAS_C*f).toLocaleString()}</td></tr>
-  <tr><td>&nbsp;of whom killed</td><td class="mono">${Math.round(CAS_CK*f).toLocaleString()}</td></tr>
-  <tr><td>German casualties</td><td class="mono red">${Math.round(CAS_G*fG).toLocaleString()}</td></tr>
-  <tr><td>&nbsp;of whom prisoners</td><td class="mono red">${Math.round(CAS_GP*fG).toLocaleString()}</td></tr>
-  <tr><td colspan=2 class="small" style="color:var(--dim);padding-top:4px">Men drawn on this map</td></tr>
+  <tr><td colspan=2 class="small" style="color:var(--dim)">Whole battle, 9–12 April. Final totals are recorded; how they build up hour by hour is estimated.</td></tr>
+  <tr><td><b>Canadian Corps</b></td><td></td></tr>
+  <tr><td>&nbsp;killed and wounded so far</td><td class="mono">${n(CAS_C*f)} <span class="small" style="color:var(--dim)">of 10,602</span></td></tr>
+  <tr><td>&nbsp;of whom killed</td><td class="mono">${n(CAS_CK*f)} <span class="small" style="color:var(--dim)">of 3,598</span></td></tr>
+  <tr><td><b>German Army</b> (estimate)</td><td></td></tr>
+  <tr><td>&nbsp;killed, wounded and captured</td><td class="mono red">${n(CAS_G*f)} <span class="small" style="color:var(--dim)">of about 20,000</span></td></tr>
+  <tr><td>&nbsp;of whom captured</td><td class="mono red">${n(CAS_GP*f)} <span class="small" style="color:var(--dim)">of about 4,000</span></td></tr>
+  <tr><td colspan=2 class="small" style="color:var(--dim);padding-top:6px">Men drawn on this map: only the 21 assault battalions (10,080 men), who took most of the losses, and the German front garrison (2,750 men, illustrative). So their rates are higher than the whole-corps rate.</td></tr>
   <tr><td>Canadians hit (× marks)</td><td class="mono">${CAS.a.toLocaleString()} of ${SUB.men.length.toLocaleString()}</td></tr>
   <tr><td>Germans hit (× marks)</td><td class="mono red">${CAS.g.toLocaleString()} of ${GER.length.toLocaleString()}</td></tr>
   <tr><td>Germans captured or gone</td><td class="mono red">${CAS.gp.toLocaleString()}</td></tr></table>`; }
