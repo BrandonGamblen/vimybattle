@@ -1221,6 +1221,8 @@ document.getElementById('tLow').onchange=e=>{ LOW=e.target.checked; renderer.sha
 tog('tReach','reach',()=>ovDirty=true); tog('tHeat','heat',()=>ovDirty=true); tog('tTraj','traj');
 tog('tSub','sub',()=>subGroup.forEach(m=>m.visible=UI.sub)); tog('tBn','bn',()=>{}); tog('tSub2','sub2'); UI.troop=false; UI.xh=false;  tog('tXh','xh'); UI.comm=false; tog('tComm','comm',()=>TRENCH3D.children.forEach(m=>{ if(m.userData.comm) m.visible=UI.comm; })); tog('tSide','side',()=>ovDirty=true); tog('tGrid','grid',()=>gridMesh.visible=UI.grid); tog('tLbl','lbl',()=>labelsEl.style.display=UI.lbl?'':'none');
 // ================= trench traces in 3D (seen when the camera is low): fire bays and traverses, chalk spoil, dark floor =================
+// jumping-off ditches: 120 m short of the German front line, or halfway across no man's land where it is narrower than 240 m
+function jumpOff(p){ return -Math.min(120,Math.max(20,p.dCF*0.5)); }
 const TRENCH3D=(()=>{ const G=new THREE.Group(); G.visible=false; scene.add(G);
   const resamp=(P,step)=>{ const out=[]; for(let i=0;i<P.length-1;i++){ const [ax,az]=P[i],[bx,bz]=P[i+1], L=Math.hypot(bx-ax,bz-az), n=Math.max(1,Math.ceil(L/step)); for(let k=0;k<n;k++) out.push([ax+(bx-ax)*k/n,az+(bz-az)*k/n]); } out.push(P[P.length-1]); return out; };
   const smoothN=(P,i,r)=>{ const a=P[Math.max(0,i-r)], b=P[Math.min(P.length-1,i+r)], dx=b[0]-a[0], dz=b[1]-a[1], L=Math.hypot(dx,dz)||1; return [dz/L,-dx/L]; };
@@ -1237,7 +1239,7 @@ const TRENCH3D=(()=>{ const G=new THREE.Group(); G.visible=false; scene.add(G);
     [[7.5*w,0x9c917c,.9,0.05],[3.4*w,0x5a4a38,.95,0.06],[1.7*w,0x1d150f,1,0.07]].forEach(([wd,c,op,lift],k)=>{ const m=new THREE.Mesh(ribbonGeo(T,wd,lift),new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:op,depthWrite:false,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-3-k,polygonOffsetUnits:-3-k})); m.renderOrder=2+k*0.1; G.add(m); }); }
   const TRC={};
   addTrench(CF,-1,'fire'); TRC.cf=G.userData.last;
-  addTrench(GFS.filter(p=>p.s>=CORPS_S0&&p.s<=CORPS_S1).map(p=>[p.x-p.nx*120,p.z-p.nz*120]),-1,'ditch'); TRC.ditch=G.userData.last;
+  addTrench(GFS.filter(p=>p.s>=CORPS_S0&&p.s<=CORPS_S1).map(p=>{ const o=jumpOff(p); return [p.x+p.nx*o,p.z+p.nz*o]; }),-1,'ditch'); TRC.ditch=G.userData.last;
   addTrench(cfOffset(150),-1,'fire'); TRC.sup=G.userData.last;
   G.userData.TRC=TRC;
   const gline=o=>GFS.map(p=>[p.x+p.nx*o,p.z+p.nz*o]);
@@ -1257,11 +1259,11 @@ const BNS=(()=>{ const sb=BRIGS.map(([n,bn,[x,z]])=>sOfPt(x,z)), out=[];
   const subS=SUBW.map(w=>sOfPt(w.exit[0],w.exit[1]));
   BRIGS.forEach(([bde],i)=>{ const a=i===0?CORPS_S0:(sb[i-1]+sb[i])/2, b=i===sb.length-1?CORPS_S1:(sb[i]+sb[i+1])/2, names=BN_NAMES[i];
     names.forEach((nm,k)=>{ const sa=a+(b-a)*k/names.length, sb2=a+(b-a)*(k+1)/names.length, s=(sa+sb2)/2, p=gfAt(s); let wi=0,bd=1e9; subS.forEach((q,j)=>{ const d=Math.abs(q-s); if(d<bd){bd=d;wi=j;} });
-      const w=SUBW[wi], J=offPt(s,-120), P=w.pts.slice().reverse();
+      const w=SUBW[wi], J=(q=>[q.x+q.nx*jumpOff(q),q.z+q.nz*jumpOff(q)])(gfAt(s)), P=w.pts.slice().reverse();
       const path=[[-9850,P[0][1]+(hash(out.length,13)-0.5)*900],[P[0][0]-700,P[0][1]+(hash(out.length,14)-0.5)*200],...P,J];
       const L=[0]; for(let j=1;j<path.length;j++) L.push(L[j-1]+Math.hypot(path[j][0]-path[j-1][0],path[j][1]-path[j-1][1]));
       const pdep=[0,0,...(w.dep||P.map(()=>0)).slice().reverse(),0];
-      out.push({name:nm,bde,bi:i,s,p,path,L,J,pdep,seg:(offSegs(sa+15,sb2-15,()=>-120)[0]||[]),t0:T_NIGHT0+hash(out.length,15)*2700,t1:T_INPOS-1800-hash(out.length,16)*1800,pos:null,vis:null}); }); });
+      out.push({name:nm,bde,bi:i,s,p,path,L,J,pdep,seg:(offSegs(sa+15,sb2-15,jumpOff)[0]||[]),t0:T_NIGHT0+hash(out.length,15)*2700,t1:T_INPOS-1800-hash(out.length,16)*1800,pos:null,vis:null}); }); });
   return out; })();
 const bnTex=(nm)=>{ const c=document.createElement('canvas'); c.width=160; c.height=104; const g=c.getContext('2d');
   g.fillStyle='rgba(10,20,40,.55)'; g.fillRect(16,2,128,62); g.fillStyle='#3d6fd6'; g.fillRect(20,6,120,54); g.strokeStyle='#fff'; g.lineWidth=4; g.strokeRect(20,6,120,54); g.beginPath(); g.moveTo(20,6); g.lineTo(140,60); g.moveTo(140,6); g.lineTo(20,60); g.stroke();
