@@ -20,6 +20,10 @@ button,select{font:inherit;color:var(--ink);background:#33352d;border:1px solid 
 button:hover{background:#43453a}button.on{background:#5b4a2a;border-color:#a8854a}
 .row{display:flex;align-items:center;gap:8px;margin:5px 0}.row label{flex:1}
 input[type=range]{flex:1;accent-color:#c49a52}
+@keyframes amberPulse{0%,100%{box-shadow:0 0 4px 1px rgba(196,154,82,.45),inset 0 0 3px rgba(196,154,82,.25)}50%{box-shadow:0 0 16px 5px rgba(232,180,90,.85),inset 0 0 6px rgba(232,180,90,.4)}}
+#introGo:not([disabled]){border-color:#e0b25e;color:#fff4dc;animation:amberPulse 1.8s ease-in-out infinite}
+#play{border-color:#c49a52;box-shadow:0 0 6px 1px rgba(196,154,82,.55)}
+#play.idle{animation:amberPulse 1.8s ease-in-out infinite}
 .tog{display:grid;grid-template-columns:1fr 1fr;gap:4px 8px}.tog label{display:flex;gap:5px;align-items:center;cursor:pointer}
 .mono{font-family:'IBM Plex Mono',monospace}
 table{width:100%;border-collapse:collapse;font-size:12px}td{padding:2px 3px;border-bottom:1px solid #35362d;vertical-align:top}td:first-child{color:var(--dim);width:42%}
@@ -78,9 +82,9 @@ body.cine.tour #phase{display:block!important;top:8vh;bottom:auto;left:22vw;righ
 <body>
 <div id="intro"><div class="box">
  <h2>Vimy Ridge, 9–12 April 1917</h2>
- <p>A 3D map of the Canadian Corps' attack, built on two 1917 maps. The battle is in four phases.</p>
+ <p>A 3D map of the Canadian Corps' attack, built on two 1917 maps. It runs in seven parts, from the bombardment of 20 March to the German withdrawal on 13–14 April.</p>
  <ol>
-  <li>Choose a phase in the panel at the bottom (start with Phase 1).</li>
+  <li>The map opens on the preparation. Choose another part in the panel at the bottom, or press <b>Next ▶</b>.</li>
   <li>Press <b>▶ Play</b>. With <b>Guided camera</b> ticked, the camera flies to the important places and a card explains what is happening. Some moments pause on their own; press <b>Continue</b>.</li>
   <li>Click the map at any time to take the camera yourself: drag to turn, right-drag to slide, scroll to zoom. Tick <b>Guided camera</b> to give it back.</li>
   <li>Click any gun battery to see its range and how accurate it is.</li>
@@ -1203,6 +1207,7 @@ addEventListener('keydown',e=>{ if(e.key==='Escape'){ placing=null; return; } if
 
 // ================= UI wiring =================
 const playB=document.getElementById('play');
+setInterval(()=>playB.classList.toggle('idle',!playing),300);
 playB.onclick=()=>{ if(tNow>=PH.t1){ tNow=PH.t0; clearShells(); curShot=null; } playing=!playing; playB.textContent=playing?'⏸ Pause':'▶ Play'; };
 document.getElementById('tl').oninput=e=>{ curShot=null; frozen=null; tNow=u2t(+e.target.value); clearShells(); batteries.forEach(b=>{b.cool=Math.random()*10; b.target=null;}); updatePhaseVisuals(true); };
 function setPhase(n,quiet){ if(typeof setShotScene==='function') setShotScene(null); if(!PHASES[n]) n=1; PH=PHASES[n]; document.getElementById('phSel').value=n; tNow=PH.t0; playing=false; playB.textContent='▶ Play'; frozen=null; curShot=null;
