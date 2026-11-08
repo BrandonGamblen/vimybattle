@@ -1340,7 +1340,7 @@ const SUB=(()=>{ const men=[], coys=[];
           const tOff=wave===0?hh*1.5:wave===1?-10+hh*1.5:wave===2?-dc+hh*1.5:-dc-150+hh*1.5;    // waiting: 1st and 2nd waves in the jumping-off ditches, 3rd in the front line, 4th in the support trench
           const ap=bnFramePt(b,u,tOff), w=snapTr(wave<2?TRIX.ditch:wave===2?TRIX.cf:TRIX.sup,ap[0],ap[1]);
           b.nMen=(b.nMen||0)+1;
-          men.push({b,k:b.nMen-1,u,off:WAVES[wave]+hh*7,tOff,wx:w[0]+(wave===1?-b.p.nx*2:0),wz:w[1]+(wave===1?-b.p.nz*2:0),j:(hash(bi*1000+c*100+pl*30+m,9)-0.5)*4}); } } } });
+          men.push({b,k:b.nMen-1,u,off:WAVES[wave]+hh*7,tOff,wx:w[0]+(wave===1?-b.p.nx*2:0),wz:w[1]+(wave===1?-b.p.nz*2:0),j:(hash(bi*1000+c*100+pl*30+m,9)-0.5)*4,dd:(hash(bi*1000+c*100+pl*30+m,11)-0.5)*16,ph:hash(bi*1000+c*100+pl*30+m,12)*6.283}); } } } });
   const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(men.length*3),3));
   { const C=new Float32Array(men.length*3), col=new THREE.Color(); men.forEach((m,i)=>{ const c=Math.floor((m.u<0.5?0:1)+(m.off<-60?2:0)); col.setHSL((198+m.b.bi*7)/360,0.9,0.72-c*0.07); C[i*3]=col.r; C[i*3+1]=col.g; C[i*3+2]=col.b; }); g.setAttribute('color',new THREE.BufferAttribute(C,3)); }
   const pts=new THREE.Points(g,new THREE.PointsMaterial({vertexColors:true,size:3,sizeAttenuation:false,depthTest:false,transparent:true,opacity:.95})); pts.renderOrder=8; pts.frustumCulled=false; pts.visible=false; scene.add(pts);
@@ -1390,11 +1390,14 @@ const FIGHT=(()=>{ const N=700, g=new THREE.BufferGeometry(); g.setAttribute('po
   const p=new THREE.Points(g,new THREE.PointsMaterial({map:glowDot(),size:9,sizeAttenuation:false,vertexColors:true,transparent:true,depthTest:false,blending:THREE.AdditiveBlending,depthWrite:false})); p.renderOrder=9; p.frustumCulled=false; scene.add(p);
   return {N,p,life:new Float32Array(N),max:new Float32Array(N),kind:new Uint8Array(N)}; })();
 function fightOn(t){ const n=PH.n; if(n===1) return t>=0&&t<3600; if(n===2) return (t>=4500&&t<14100)||t<14100; if(n===3) return t>=14700&&t<31200; if(n===4) return (t>=T85&&t<T85_END)||(t>=T10A&&t<T10A+1800)||(t>=T12&&t<T12_END); return false; }
+// only the part of the front that is actually attacking flashes: troop points with the barrage (or, with no barrage, the Phase 4 contact) within 450 m ahead
+function fightPts(){ if(fightPts.k===BARR.troop&&fightPts.f===BARR.field) return fightPts.v; fightPts.k=BARR.troop; fightPts.f=BARR.field;
+  const B=BARR.field||[]; fightPts.v=!B.length?(PH.n===4?BARR.troop:[]):BARR.troop.filter(q=>B.some(b=>{ const dx=b[0]-q[0], dz=b[1]-q[1], a=dx*q[3]+dz*q[4]; return a>-40&&a<450&&Math.abs(dx*q[4]-dz*q[3])<120; })); return fightPts.v; }
 function updFight(dt){ const F=FIGHT, P=F.p.geometry.attributes.position, C=F.p.geometry.attributes.color, on=fightOn(tNow)&&BARR.troop.length>0&&!(typeof FOL!=='undefined'&&FOL.hideOv)&&!window.__CSON;
   F.p.visible=on; if(!on) return; const run=playing?1:0;
   for(let i=0;i<F.N;i++){ F.life[i]-=dt*run;
     if(F.life[i]<=0){ if(!playing||Math.random()<0.5){ P.setXYZ(i,0,-999,0); F.life[i]=0.05+Math.random()*0.3; continue; }
-      const q=BARR.troop[Math.floor(Math.random()*BARR.troop.length)], f=-40+Math.random()*170, l=(Math.random()-0.5)*40, x=q[0]+q[3]*f-q[4]*l, z=q[1]+q[4]*f+q[3]*l;
+      const TQ=fightPts(); if(!TQ.length){ P.setXYZ(i,0,-999,0); F.life[i]=0.3; continue; } const q=TQ[Math.floor(Math.random()*TQ.length)], f=-40+Math.random()*170, l=(Math.random()-0.5)*40, x=q[0]+q[3]*f-q[4]*l, z=q[1]+q[4]*f+q[3]*l;
       F.kind[i]=Math.random()<0.12?1:0; F.max[i]=F.life[i]=F.kind[i]?0.35:0.06+Math.random()*0.12; P.setXYZ(i,x*S,meshY(x,z)+0.4,z*S); }
     const k=Math.max(0,F.life[i]/(F.max[i]||1));
     if(F.kind[i]) C.setXYZ(i,1.0*k,0.45*k,0.15*k); else C.setXYZ(i,1.0*k,0.78*k,0.3*k); }
@@ -1427,7 +1430,9 @@ function updSubUnits(){ const camY=camera.position.y, on=UI.bn&&UI.sub2&&camY<70
       if(q[4]<0.5&&figOn&&FIGS.A.count<FIG_MAX&&(x*S-tgt.x)**2+(z*S-tgt.z)**2<R2){ putFig(FIGS.A,x,z,q[2],q[3],false,k); P.setXYZ(i,0,-999,0); any=true; return; }
       P.setXYZ(i,x*S,meshY(x,z)-q[4]*EX*S+0.3,z*S); any=true; return; }
     if(!b.vis.visible||!b.pos){ P.setXYZ(i,0,-999,0); return; }
-    const dx=b.pos[0]+b.p.nx*60-b.J[0], dz=b.pos[1]+b.p.nz*60-b.J[1]; const kk=kOut(b), q=bnFramePt(b,m.u,m.off+(PH.n===0&&kk>0?60:0)), jj=m.j; let x=q[0]+dx+b.p.nz*jj, z=q[1]+dz-b.p.nx*jj; if(kk<1){ x=m.wx+(x-m.wx)*kk; z=m.wz+(z-m.wz)*kk; }
+    const dx=b.pos[0]+b.p.nx*60-b.J[0], dz=b.pos[1]+b.p.nz*60-b.J[1]; const kk=kOut(b), q=bnFramePt(b,m.u,m.off+(PH.n===0&&kk>0?60:0)), jj=m.j; let x=q[0]+dx+b.p.nz*jj, z=q[1]+dz-b.p.nx*jj;
+    if(kk>0&&PH.n>=1){ const w=kk*(1-(b.cons||0)), fd=(m.dd+Math.sin(tNow/41+m.ph)*3.5)*w, fl=Math.sin(tNow/57+m.ph*1.7)*2.5*w; x+=b.p.nx*fd+b.p.nz*fl; z+=b.p.nz*fd-b.p.nx*fl; }   // men in the open do not keep perfect ranks: each is a few metres ahead or behind, and drifts
+    if(kk<1){ x=m.wx+(x-m.wx)*kk; z=m.wz+(z-m.wz)*kk; }
     if(b.cons>0.01&&b.T1!==null){ const L=b.seg.length-1, f=m.u*L, ii=Math.min(L-1,Math.floor(f)), sm=b.seg[ii][2]+(b.seg[ii+1][2]-b.seg[ii][2])*(f-ii), gp=gfAt(sm), T=(m.off>-60?b.T1:b.T2)+((Math.floor(sm/9))%2?3:-3)+m.j*0.4;
       const cx=gp.x+gp.nx*T, cz=gp.z+gp.nz*T; x+=(cx-x)*b.cons; z+=(cz-z)*b.cons; }
     dAc(b,x,z);
