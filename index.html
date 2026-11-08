@@ -118,6 +118,7 @@ body.cine.tour #phase{display:block!important;top:8vh;bottom:auto;left:22vw;righ
     <label><input type="checkbox" id="tReach">Reach overlap</label>
     <label><input type="checkbox" id="tHeat" checked>Shell impacts</label>
     <label><input type="checkbox" id="tTraj" checked>Trajectories</label>
+    <label><input type="checkbox" id="tBarr">Barrage band</label>
     <label><input type="checkbox" id="tSide" checked>Held-ground tint</label>
     <label><input type="checkbox" id="tXh">Impact crosshairs</label>
     <label><input type="checkbox" id="tComm">Communication trenches (schematic)</label>
@@ -133,7 +134,7 @@ body.cine.tour #phase{display:block!important;top:8vh;bottom:auto;left:22vw;righ
   <div class="small legend" style="margin-top:6px">
     <span style="background:rgb(70,100,170)"></span>Allied-held <span style="background:rgb(165,50,55);margin-left:6px"></span>German-held<br>
     <span style="background:#111"></span>Black <span style="background:#d23a2a"></span>Red <span style="background:#2f6fe0"></span>Blue <span style="background:#8a5a2b"></span>Brown objective lines<br>
-    <span style="background:#ffb347"></span>Creeping barrage <span style="background:#9fc3ff"></span>Canadian infantry<br>
+    <span style="background:#ffb347"></span>Creeping barrage (band off by default) <span style="background:#9fc3ff"></span>Canadian infantry<br>
     Grid: 1 km squares; 100 m squares when zoomed in. Lowest camera height: 20 m.
   </div>
 
@@ -604,7 +605,7 @@ const ovTex=new THREE.CanvasTexture(ovC);
 const overlay=new THREE.Mesh(terrGeo,new THREE.MeshBasicMaterial({map:ovTex,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2})); overlay.renderOrder=1; overlay.visible=false;   // drawn inside the terrain shader now (one pass instead of three)
 let ovDirty=true,lastComp=0;
 let LOW=false; try{ LOW=localStorage.getItem('vimyLow')==='1'; }catch(e){}
-const UI={side:true,snow:true,obj:true,div:true,rings:false,cont:false,reach:false,heat:true,traj:true,sub:true,grid:true,lbl:true};
+const UI={side:true,snow:true,obj:true,div:true,rings:false,cont:false,reach:false,heat:true,traj:true,barrB:false,sub:true,grid:true,lbl:true};
 const capC=document.createElement('canvas'); capC.width=OW; capC.height=OH;
 function composite(){ const c=ovC.getContext('2d'); c.clearRect(0,0,OW,OH); if(UI.side){ c.drawImage(sideC,0,0); c.globalCompositeOperation='destination-out'; c.drawImage(capC,0,0); c.globalCompositeOperation='source-over'; c.globalAlpha=0.17*255/255*0.9; c.drawImage(capC,0,0); c.globalAlpha=1; } if(typeof mineC!=='undefined') c.drawImage(mineC,0,0); if(UI.reach) c.drawImage(reachC,0,0); if(UI.heat) c.drawImage(heatC,0,0); ovTex.needsUpdate=true; ovDirty=false; }
 function recomputeReach(){ const c=reachC.getContext('2d'), img=c.createImageData(OW,OH), d=img.data;
@@ -1050,7 +1051,7 @@ function updatePhaseVisuals(force){ updExtraPhase();
   if(force||key!==lastBarrKey){ lastBarrKey=key; barrMeshes.forEach(m=>{scene.remove(m); m.geometry.dispose();}); barrMeshes=[];
     const fs=offSegs(CORPS_S0,CORPS_S1,p=>PH.barr(p,tNow)), hs=offSegs(CORPS_S0,CORPS_S1,p=>PH.barrH(p,tNow));
     if(BL){ fs.push(...BL.barr); hs.push(...BL.how); }
-    fs.forEach(g=>barrMeshes.push(ribbon(g,30,0xffb347,0.42,0.8))); hs.forEach(g=>barrMeshes.push(ribbon(g,18,0xff7a30,0.28,0.8))); if(typeof FOL!=='undefined'&&FOL.hideOv) barrMeshes.forEach(m=>m.visible=false);
+    fs.forEach(g=>barrMeshes.push(ribbon(g,30,0xffb347,0.42,0.8))); hs.forEach(g=>barrMeshes.push(ribbon(g,18,0xff7a30,0.28,0.8))); barrMeshes.forEach(m=>m.visible=UI.barrB); if(typeof FOL!=='undefined'&&FOL.hideOv) barrMeshes.forEach(m=>m.visible=false);
     BARR.field=fs.flat(); BARR.how=hs.flat(); }
   if(force||Math.abs(tNow-lastTroopT)>4){ lastTroopT=tNow; troopMeshes.forEach(m=>{scene.remove(m); m.geometry.dispose();}); troopMeshes=[];
     const tl=[]; DIVS.forEach((d,i)=>{ if(PH.ownTroop||(PH.band&&i>=2)) return; const g=offSegs(d.s0+40,d.s1-40,p=>PH.troop(p,tNow))[0]; if(g) tl.push(g); });
@@ -1249,7 +1250,7 @@ tog('tObj','obj',()=>objGroup.forEach(m=>m.visible=UI.obj)); tog('tDiv','div',()
 tog('tRings','rings',()=>batteries.forEach(b=>b.buildRings())); tog('tCont','cont',()=>batteries.forEach(b=>b.buildRings()));
 tog('tSnow','snow',()=>snowPts.visible=UI.snow);
 document.getElementById('tLow').onchange=e=>{ LOW=e.target.checked; renderer.shadowMap.enabled=!LOW; scene.traverse(o=>{ if(o.material) [].concat(o.material).forEach(m=>m.needsUpdate=true); }); renderer.setPixelRatio(LOW?Math.min(1,devicePixelRatio):Math.min(2,devicePixelRatio)); renderer.setSize(innerWidth,innerHeight); try{ localStorage.setItem('vimyLow',LOW?'1':'0'); }catch(err){} };
-tog('tReach','reach',()=>ovDirty=true); tog('tHeat','heat',()=>ovDirty=true); tog('tTraj','traj');
+tog('tReach','reach',()=>ovDirty=true); tog('tHeat','heat',()=>ovDirty=true); tog('tTraj','traj'); tog('tBarr','barrB',()=>barrMeshes.forEach(m=>m.visible=UI.barrB&&!(typeof FOL!=='undefined'&&FOL.hideOv)));
 tog('tSub','sub',()=>subGroup.forEach(m=>m.visible=UI.sub)); tog('tBn','bn',()=>{}); tog('tSub2','sub2'); UI.troop=false; UI.xh=false;  tog('tXh','xh'); UI.comm=false; tog('tComm','comm',()=>TRENCH3D.children.forEach(m=>{ if(m.userData.comm) m.visible=UI.comm; })); tog('tSide','side',()=>ovDirty=true); tog('tGrid','grid',()=>gridMesh.visible=UI.grid); tog('tLbl','lbl',()=>labelsEl.style.display=UI.lbl?'':'none');
 // ================= trench traces in 3D (seen when the camera is low): fire bays and traverses, chalk spoil, dark floor =================
 // jumping-off ditches: 120 m short of the German front line, or halfway across no man's land where it is narrower than 240 m
@@ -1349,7 +1350,7 @@ const SUB=(()=>{ const men=[], coys=[];
           const tOff=wave===0?hh*1.5:wave===1?-10+hh*1.5:wave===2?-dc+hh*1.5:-dc-150+hh*1.5;    // waiting: 1st and 2nd waves in the jumping-off ditches, 3rd in the front line, 4th in the support trench
           const ap=bnFramePt(b,u,tOff), w=snapTr(wave<2?TRIX.ditch:wave===2?TRIX.cf:TRIX.sup,ap[0],ap[1]);
           b.nMen=(b.nMen||0)+1;
-          men.push({b,k:b.nMen-1,u,off:WAVES[wave]+hh*7,tOff,wx:w[0]+(wave===1?-b.p.nx*2:0),wz:w[1]+(wave===1?-b.p.nz*2:0),j:(hash(bi*1000+c*100+pl*30+m,9)-0.5)*4,dd:(hash(bi*1000+c*100+pl*30+m,11)-0.5)*16,ph:hash(bi*1000+c*100+pl*30+m,12)*6.283}); } } } });
+          men.push({b,k:b.nMen-1,u,off:WAVES[wave]+hh*7,tOff,wx:w[0]+(wave===1?-b.p.nx*2:0),wz:w[1]+(wave===1?-b.p.nz*2:0),j:(hash(bi*1000+c*100+pl*30+m,9)-0.5)*4,dd:(hash(bi*1000+c*100+pl*30+m,11)-0.5)*12+(hash(bi*1000+c*100+pl*30+Math.floor(m/8),13)-0.5)*30,ua:(()=>{ const sc=Math.floor(m/8), uc=u0+(Math.min(29,sc*8+4)+0.5)/30*0.25; return uc+(u-uc)*0.55+(hash(bi*1000+c*100+pl*30+sc,14)-0.5)*0.03; })(),ph:hash(bi*1000+c*100+pl*30+m,12)*6.283}); } } } });
   const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(men.length*3),3));
   { const C=new Float32Array(men.length*3), col=new THREE.Color(); men.forEach((m,i)=>{ const c=Math.floor((m.u<0.5?0:1)+(m.off<-60?2:0)); col.setHSL((198+m.b.bi*7)/360,0.9,0.72-c*0.07); C[i*3]=col.r; C[i*3+1]=col.g; C[i*3+2]=col.b; }); g.setAttribute('color',new THREE.BufferAttribute(C,3)); }
   const pts=new THREE.Points(g,new THREE.PointsMaterial({vertexColors:true,size:3,sizeAttenuation:false,depthTest:false,transparent:true,opacity:.95})); pts.renderOrder=8; pts.frustumCulled=false; pts.visible=false; scene.add(pts);
@@ -1439,7 +1440,7 @@ function updSubUnits(){ const camY=camera.position.y, on=UI.bn&&UI.sub2&&camY<70
       if(q[4]<0.5&&figOn&&FIGS.A.count<FIG_MAX&&(x*S-tgt.x)**2+(z*S-tgt.z)**2<R2){ putFig(FIGS.A,x,z,q[2],q[3],false,k); P.setXYZ(i,0,-999,0); any=true; return; }
       P.setXYZ(i,x*S,meshY(x,z)-q[4]*EX*S+0.3,z*S); any=true; return; }
     if(!b.vis.visible||!b.pos){ P.setXYZ(i,0,-999,0); return; }
-    const dx=b.pos[0]+b.p.nx*60-b.J[0], dz=b.pos[1]+b.p.nz*60-b.J[1]; const kk=kOut(b), q=bnFramePt(b,m.u,m.off+(PH.n===0&&kk>0?60:0)), jj=m.j; let x=q[0]+dx+b.p.nz*jj, z=q[1]+dz-b.p.nx*jj;
+    const dx=b.pos[0]+b.p.nx*60-b.J[0], dz=b.pos[1]+b.p.nz*60-b.J[1]; const kk=kOut(b), q=bnFramePt(b,PH.n>=1?m.u+(m.ua-m.u)*Math.min(1,kk*(1-(b.cons||0))):m.u,m.off+(PH.n===0&&kk>0?60:0)), jj=m.j*1.6; let x=q[0]+dx+b.p.nz*jj, z=q[1]+dz-b.p.nx*jj;
     if(kk>0&&PH.n>=1){ const w=kk*(1-(b.cons||0)), fd=(m.dd+Math.sin(tNow/41+m.ph)*3.5)*w, fl=Math.sin(tNow/57+m.ph*1.7)*2.5*w; x+=b.p.nx*fd+b.p.nz*fl; z+=b.p.nz*fd-b.p.nx*fl; }   // men in the open do not keep perfect ranks: each is a few metres ahead or behind, and drifts
     if(kk<1){ x=m.wx+(x-m.wx)*kk; z=m.wz+(z-m.wz)*kk; }
     if(b.cons>0.01&&b.T1!==null){ const L=b.seg.length-1, f=m.u*L, ii=Math.min(L-1,Math.floor(f)), sm=b.seg[ii][2]+(b.seg[ii+1][2]-b.seg[ii][2])*(f-ii), gp=gfAt(sm), T=(m.off>-60?b.T1:b.T2)+((Math.floor(sm/9))%2?3:-3)+m.j*0.4;
