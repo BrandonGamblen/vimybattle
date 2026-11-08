@@ -2487,7 +2487,7 @@ function card2(id){
 
 const bandMid=(di,d)=>{ const Q=BAND.filter(q=>q.di===di), q=Q[Math.floor(Q.length/2)]; return bandPt(q,d==='bl'?q.L1:d==='br'?q.L1+q.L2:0); };
 const SHOTS3=[
- {id:'p3over',t0:14100,t1:14700,speed:10,go(){ const p=bandMid(2,'bl'); camTo(p[0],p[1]+400,-3600,2600,2600,3); }},
+ {id:'p3over',t0:14100,t1:14700,speed:10,go(){ const a=bandMid(2,'rd'), b=bandMid(3,'rd'); camTo((a[0]+b[0])/2+150,(a[1]+b[1])/2,-2300,1550,2250,3); }},
  {id:'p3blue',t0:14700,t1:19800,speed:45,go(){ const p=PLACES.find(q=>q[0]==='Thélus'); camTo(p[1],p[2],-1300,1100,750,3); }},
  {id:'p3pause',t0:19800,t1:25560,speed:90,go(){ const p=bandMid(3,'bl'); camTo(p[0],p[1],-1500,1300,900,3); }},
  {id:'p3brown',t0:25560,t1:31200,speed:45,go(){ const p=bandMid(3,'br'); camTo(p[0]-300,p[1]-200,-1300,900,650,3); }},
