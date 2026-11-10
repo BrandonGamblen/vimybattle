@@ -1314,6 +1314,12 @@ const HITS=[];   // recent Allied shell strikes (not counter-battery), for the P
 // Phase 1 guided view: low over the Canadian lines, travelling up and down the corps front with the attacking troops in the middle of the frame
 const LINE={s:0,dir:-1};
 function lineFrame(){ const p=gfAt(LINE.s), o=PH.troop(p,tNow), d=(o===null?0:o)-20, x=p.x+p.nx*d, z=p.z+p.nz*d; return [x,z,-p.nx*420+p.nz*120,-p.nz*420-p.nx*120,330]; }
+// Phase 1 close shot on the RCR (showcase battalion): low behind its waves, moving with them
+function rcrFrame(){ const b=BNS.find(q=>q.show), g=gfAtI(bSm(b,0.5));
+  if(PH.n!==1){ const c=(b.dc&&b.dcP===PH.n)?b.dc:(b.pos||[g.x,g.z]); return [c[0],c[1],-g.nx*280,-g.nz*280,150]; }
+  const t=Math.max(0,tNow), o=showLead(b,t)-35, x=g.x+g.nx*o, z=g.z+g.nz*o; return [x,z,-g.nx*150+g.nz*70,-g.nz*150-g.nx*70,85]; }
+function trackRCR(dt){ if(!(tourOn&&curShot&&curShot.rcr&&!frozen)) return; const f=rcrFrame(), gy=meshY(f[0],f[1]), T=new THREE.Vector3(f[0]*S,gy+0.3,f[1]*S), C=new THREE.Vector3((f[0]+f[2])*S,Math.max(gy+f[4]*S,meshY(f[0]+f[2],f[1]+f[3])+MIN_ALT*S+0.5),(f[1]+f[3])*S);
+  if(flyT<1){ fly.t1.copy(T); fly.c1.copy(C); return; } const k=Math.min(1,dt*1.5); controls.target.lerp(T,k); camera.position.lerp(C,k); }
 function trackLine(dt){ if(!(tourOn&&curShot&&curShot.line&&PH.n===1&&!frozen)) return; const a=DIVS[0].s0+300, b=DIVS[3].s1-300, lo=Math.min(a,b), hi=Math.max(a,b);
   if(playing) LINE.s+=LINE.dir*dt*90; if(LINE.s<lo){ LINE.s=lo; LINE.dir=1; } if(LINE.s>hi){ LINE.s=hi; LINE.dir=-1; }
   const f=lineFrame(), gy=meshY(f[0],f[1]), T=new THREE.Vector3(f[0]*S,gy+0.4,f[1]*S), C=new THREE.Vector3((f[0]+f[2])*S,Math.max(gy+f[4]*S,meshY(f[0]+f[2],f[1]+f[3])+MIN_ALT*S+0.5),(f[1]+f[3])*S);
@@ -1462,7 +1468,7 @@ function updSubUnits(){ const camY=camera.position.y, on=UI.bn&&UI.sub2&&camY<70
     if(PH.n===0&&UI.bn){ // night of 8–9 April: the battalion marches in a column (about 1 m per man, two abreast) along its route and through its subway, then each man drops into his trench
       if(tNow<b.t0){ P.setXYZ(i,0,-999,0); return; } const Lt=b.L[b.L.length-1], D=(tNow-b.t0)/(b.t1-b.t0)*Lt, dm=D-m.k*1.0;
       if(dm<0){ P.setXYZ(i,0,-999,0); return; }
-      if(dm>=Lt){ if(figOn&&FIGS.A.count<FIG_MAX&&(m.wx*S-tgt.x)**2+(m.wz*S-tgt.z)**2<R2){ putFig(FIGS.A,m.wx,m.wz,b.p.nx,b.p.nz,true,k); P.setXYZ(i,0,-999,0); } else P.setXYZ(i,m.wx*S,meshY(m.wx,m.wz)+0.3,m.wz*S); dAc(b,m.wx,m.wz,m); any=true; return; }
+      if(dm>=Lt){ if(figOn&&FIGS.A.count<FIG_MAX&&(m.wx*S-tgt.x)**2+(m.wz*S-tgt.z)**2<R2){ putFig(FIGS.A,m.wx,m.wz,b.p.nx,b.p.nz,true,k,b.show?roleOf(m):0); P.setXYZ(i,0,-999,0); } else P.setXYZ(i,m.wx*S,meshY(m.wx,m.wz)+0.3,m.wz*S); dAc(b,m.wx,m.wz,m); any=true; return; }
       const q=pathAt(b,dm), side=(m.k%2?0.6:-0.6), x=q[0]-q[3]*side, z=q[1]+q[2]*side; dAc(b,x,z,m);
       if(q[4]<0.5&&figOn&&FIGS.A.count<FIG_MAX&&(x*S-tgt.x)**2+(z*S-tgt.z)**2<R2){ putFig(FIGS.A,x,z,q[2],q[3],false,k); P.setXYZ(i,0,-999,0); any=true; return; }
       P.setXYZ(i,x*S,meshY(x,z)-q[4]*EX*S+0.3,z*S); any=true; return; }
@@ -1477,7 +1483,7 @@ function updSubUnits(){ const camY=camera.position.y, on=UI.bn&&UI.sub2&&camY<70
     if(b.cons>0.01&&b.T1!==null){ const L=b.seg.length-1, f=m.u*L, ii=Math.min(L-1,Math.floor(f)), sm=b.seg[ii][2]+(b.seg[ii+1][2]-b.seg[ii][2])*(f-ii), gp=gfAt(sm), T=(m.off>-60?b.T1:b.T2)+((Math.floor(sm/9))%2?3:-3)+m.j*0.4;
       const cx=gp.x+gp.nx*T, cz=gp.z+gp.nz*T; x+=(cx-x)*b.cons; z+=(cz-z)*b.cons; }
     dAc(b,x,z,m);
-    if(figOn&&FIGS.A.count<FIG_MAX&&(x*S-tgt.x)**2+(z*S-tgt.z)**2<R2){ putFig(FIGS.A,x,z,b.p.nx,b.p.nz,kk<0.5,k); P.setXYZ(i,0,-999,0); any=true; return; }
+    if(figOn&&FIGS.A.count<FIG_MAX&&(x*S-tgt.x)**2+(z*S-tgt.z)**2<R2){ putFig(FIGS.A,x,z,b.p.nx,b.p.nz,kk<0.5,k,b.show?roleOf(m):0); P.setXYZ(i,0,-999,0); any=true; return; }
     P.setXYZ(i,x*S,meshY(x,z)+0.3,z*S); any=true; });
   BNS.forEach(b=>{ const d=b.dA; b.dc=d[2]?[d[0]/d[2],d[1]/d[2]]:null; b.dcT=tNow; b.dcP=PH.n; });
   // casualties: a man hit becomes an x where he fell and stays there
@@ -2506,22 +2512,23 @@ let flyDur=1.2;
 const SHOTS=[
  {id:'over',t0:-300,t1:-40,speed:15,go(){ const m=gfAt((CORPS_S0+CORPS_S1)/2); camTo(m.x+600,m.z,-m.nx*5200-1500,-m.nz*5200+2600,2600,3); }},
  {id:'fp',t0:-40,t1:40,speed:2,go(){ camTo(FP.x,FP.z,-FP.nx*38-FP.tx*26,-FP.nz*38-FP.tz*26,26,3); }},
- {id:'adv',t0:40,t1:1900,speed:20,line:true,go(){ LINE.s=(DIVS[3].s0+DIVS[3].s1)/2; LINE.dir=-1; const f=lineFrame(); camTo(f[0],f[1],f[2],f[3],f[4],4); }},
+ {id:'rcr',t0:40,t1:900,speed:4,rcr:true,go(){ const f=rcrFrame(); camTo(f[0],f[1],f[2],f[3],f[4],4); }},
+ {id:'adv',t0:900,t1:1900,speed:20,line:true,go(){ LINE.s=(DIVS[3].s0+DIVS[3].s1)/2; LINE.dir=-1; const f=lineFrame(); camTo(f[0],f[1],f[2],f[3],f[4],4); }},
  {id:'fb',t0:1900,t1:2600,speed:4,go(){ const b=FB.b; camTo(b.x,b.z,55,30,32,3.5); }},
  {id:'sum',t0:2600,t1:3601,speed:30,go(){ const m=gfAt((CORPS_S0+CORPS_S1)/2); camTo(m.x+800,m.z,-m.nx*4000-800,-m.nz*4000+3000,3200,3); }},
 ];
 
-if(NOCINE){ for(let i=SHOTS.length-1;i>=0;i--) if(SHOTS[i].id==='fp'||SHOTS[i].id==='fb') SHOTS.splice(i,1); SHOTS[0].t1=0; const a=SHOTS.find(q=>q.id==='adv'); a.t0=0; a.t1=2600; }
+if(NOCINE){ for(let i=SHOTS.length-1;i>=0;i--) if(SHOTS[i].id==='fp'||SHOTS[i].id==='fb') SHOTS.splice(i,1); SHOTS[0].t1=0; const r=SHOTS.find(q=>q.id==='rcr'); r.t0=0; const a=SHOTS.find(q=>q.id==='adv'); a.t1=2600; }
 const SHOTS2=[
  {id:'p2over',t0:3300,t1:4300,speed:10,go(){ const m=gfAt((CORPS_S0+CORPS_S1)/2); camTo(m.x+m.nx*900,m.z,-m.nx*4600-1200,-m.nz*4600+2400,2400,3); }},
- {id:'p2red',t0:4300,t1:6900,speed:20,go(){ const d=DIVS[1],m=gfAt((d.s0+d.s1)/2); camTo(m.x+m.nx*m.dB,m.z+m.nz*m.dB,-m.nx*1500-700,-m.nz*1500+900,700,3); }},
+ {id:'p2red',t0:4300,t1:6900,speed:20,rcr:true,go(){ const f=rcrFrame(); camTo(f[0],f[1],f[2],f[3],f[4],3); }},
  {id:'p2til',t0:6900,t1:8700,speed:20,go(){ const d=DIVS[2],m=gfAt((d.s0+d.s1)/2); camTo(m.x+m.nx*m.dB,m.z+m.nz*m.dB,-m.nx*1500-600,-m.nz*1500+1000,700,3); }},
  {id:'h145',t0:8700,t1:12600,speed:30,go(){ camTo(HILL145[0]-250,HILL145[1]+100,-700,750,380,3.5); }},
  {id:'flank',t0:12600,t1:14101,speed:20,go(){ const d=DIVS[1],m=gfAt(d.s0+200); camTo(m.x+m.nx*m.dR*0.6,m.z+m.nz*m.dR*0.6,-900,1100,650,3); }},
 ];
 function card2(id){
   if(id==='p2over') return `<h3>Phase 2 · The pause on the Black Line</h3><p>By 06:25 three divisions are on the Black Line. The barrage stands about 150 m beyond them as a protective screen while the troops reorganise and fresh battalions come up. The advance starts again at 06:45 (3rd and 1st Divisions) and 07:30 (2nd Division), from the Corps dispositions table.</p><p>The 4th Division is not on the Black Line. Watch the yellow tracers on Hill 145.</p>`;
-  if(id==='p2red') return `<h3>3rd Division · to the Bois de la Folie</h3><p>The 7th and 8th Brigades go on behind the barrage (42nd Bn, PPCLI, RCR; 4th, 2nd and 1st CMR). Their Red Line runs along the western edge of the Bois de la Folie, which they reach about 07:30.</p><p class="small">Barrage rate for this phase is assumed to be the same 100 yd per 3 minutes as in Phase 1; no source found for a different rate.</p>`;
+  if(id==='p2red') return `<h3>3rd Division · to the Bois de la Folie</h3><p>The camera stays on the RCR (7th Brigade), the battalion drawn section by section. The 7th and 8th Brigades go on behind the barrage (42nd Bn, PPCLI, RCR; 4th, 2nd and 1st CMR). Their Red Line runs along the western edge of the Bois de la Folie, which they reach about 07:30.</p><p class="small">Barrage rate for this phase is assumed to be the same 100 yd per 3 minutes as in Phase 1; no source found for a different rate.</p>`;
   if(id==='p2til') return `<h3>2nd Division · Les Tilleuls</h3><p>The 4th and 5th Brigades (20th, 21st, 22nd, 25th Bns) start for the Red Line at 07:30 by the table and take the hamlet of Les Tilleuls on the Arras–Lens road. To the south the 1st Division takes its Red Line; it reports all of it taken by 09:25.</p><p class="small">Sources differ on the 2nd Division's time: Wikipedia (after Campbell) has it at Les Tilleuls about 07:00.</p>`;
   if(id==='h145') return `<h3>Hill 145 · why the 4th Division stopped</h3>
    <p>The commander of the 87th Battalion asked for a section of German trench to be left undamaged, so his men could use it after capture. The German machine guns in that trench survived. When the 87th climbed out at 05:30 (520 men in the first wave), most of the casualties came within minutes.</p>
@@ -2603,6 +2610,7 @@ function cardHTML(){
    <tr><td>Battery output <i>(model)</i></td><td>${rate} rounds/min (started at ${r0})</td></tr>
    <tr><td>Gun crew hit <i>(model)</i></td><td>${B.crew} of ${FB.crew.length}</td></tr></table>
    <p class="small">On 9 April the heavy guns also fired gas shells at German battery positions. That killed the horses, so guns that survived often couldn't be moved. The Canadians captured 54 guns between 9 and 12 April.</p>`; }
+  if(id==='rcr') return `<h3>The RCR goes over</h3><p>The Royal Canadian Regiment (7th Brigade), drawn section by section. War diary: "the leading two companies in waves at 20 paces distance and three paces interval, the two rear companies following at 50 paces distance in Artillery formation in file."</p><p>Colours: <b style="color:#ffcf3f">bombers</b>, <b style="color:#c08cff">Lewis gun</b>, <b style="color:#7fb6ff">riflemen</b>, <b style="color:#66e08a">rifle-grenadiers</b>, <b style="color:#fff">moppers-up</b>. The waves walk to about 45 m behind the barrage and wait for each lift; moppers drop into each German trench as it is crossed. Speed slowed to 4×.</p>`;
   if(id==='adv') return `<h3>Over the top</h3><p>The camera travels along the corps front, about 330 m up, keeping the leading Canadian waves in the middle of the frame. </p><p>The barrage lifts 100 yards (91 m) every 3 minutes, and the infantry follow close behind it. Each crosshair marks where one shell landed. Look how widely the rounds scatter around the barrage line: the creeping barrage worked by sheer weight of shells, not by precision.</p>
    <table><tr><td>Sentries hit at the featured trench <i>(model)</i></td><td>${F.hit} of 6</td></tr><tr><td>Featured battery guns in action</td><td>${b.nAlive()} of ${B.start}</td></tr></table>`;
   return intendedHTML();
@@ -2671,7 +2679,7 @@ function loop(now){ if(!window.__ready){ window.__ready=1; setTimeout(()=>{ cons
     shells=shells.filter(s=>!s.done);
     updatePhaseVisuals(false);
   }
-  updShocks(dt); updTracers(dt); updSnow(dt); updFollow(dt); updBattalions(dt); trackColumns(dt); trackHits(dt); trackLine(dt); orbitShot(dt); updUnitLabels(); updSubUnits(); updFight(dt); updZeroBanner(); if((window.__fn||0)%5===0) updCasPane();
+  updShocks(dt); updTracers(dt); updSnow(dt); updFollow(dt); updBattalions(dt); trackColumns(dt); trackHits(dt); trackLine(dt); trackRCR(dt); orbitShot(dt); updUnitLabels(); updSubUnits(); updFight(dt); updZeroBanner(); if((window.__fn||0)%5===0) updCasPane();
   { const near=camera.position.distanceTo(controls.target)<45; if(near!==window.__shNear){ window.__shNear=near; renderer.shadowMap.needsUpdate=true; } renderer.shadowMap.autoUpdate=near;
     window.__fn=(window.__fn||0)+1; if(window.__fn%10===0) LODH.forEach(h=>{ const far=!window.__CSON&&camera.position.distanceTo(h.position)>160; if(far&&h.visible){ h.visible=false; h.userData.lodHid=true; } else if(!far&&h.userData.lodHid){ h.visible=true; h.userData.lodHid=false; } }); }
   { const hideOv=typeof FOL!=='undefined'&&FOL.hideOv; troopMeshes.forEach(m=>m.visible=UI.troop&&!hideOv); xhPts.visible=UI.xh||(tourOn&&!!curShot&&['adv','fp'].includes(curShot.id)); TRENCH3D.visible=camera.position.y<260; } skyDome.position.copy(camera.position); updSunShadow();
