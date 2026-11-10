@@ -134,7 +134,7 @@ body.cine.tour #phase{display:block!important;top:8vh;bottom:auto;left:22vw;righ
   <div class="small legend" style="margin-top:6px">
     <span style="background:rgb(70,100,170)"></span>Allied-held <span style="background:rgb(165,50,55);margin-left:6px"></span>German-held<br>
     <span style="background:#111"></span>Black <span style="background:#d23a2a"></span>Red <span style="background:#2f6fe0"></span>Blue <span style="background:#8a5a2b"></span>Brown objective lines<br>
-    <span style="background:#ffb347"></span>Creeping barrage (band off by default) <span style="background:#9fc3ff"></span>Canadian infantry<br>
+    <span style="background:#ffb347"></span>Creeping barrage (band off by default) <br>The RCR (showcase battalion), by section: <span style="background:#ffcf3f"></span>bombers <span style="background:#c08cff"></span>Lewis gun <span style="background:#7fb6ff"></span>riflemen <span style="background:#66e08a"></span>rifle-grenadiers <span style="background:#ffffff"></span>moppers-up<br><span style="background:#9fc3ff"></span>Canadian infantry<br>
     Grid: 1 km squares; 100 m squares when zoomed in. Lowest camera height: 20 m.
   </div>
 
@@ -205,7 +205,7 @@ body.cine.tour #phase{display:block!important;top:8vh;bottom:auto;left:22vw;righ
   <div class="row keep">
     <button id="play">▶ Play</button>
     <input type="range" id="tl" min="0" max="1000" value="0" step="1">
-    <label style="flex:0 0 auto;font-size:12px;display:flex;gap:4px;align-items:center" title="The camera follows the action while playing"><input type="checkbox" id="tourB" checked>Guided camera</label><button id="ivaB" style="flex:0 0 auto">Intended vs actual</button><button id="folB" style="flex:0 0 auto;background:#3d5a8a">Follow a man</button><button id="helpB" style="flex:0 0 auto" title="How to use this map">?</button><select id="spd"><option value="5">5×</option><option value="15" selected>15×</option><option value="30">30×</option><option value="60">60×</option></select>
+    <label style="flex:0 0 auto;font-size:12px;display:flex;gap:4px;align-items:center" title="The camera follows the action while playing"><input type="checkbox" id="tourB" checked>Guided camera</label><button id="ivaB" style="flex:0 0 auto">Intended vs actual</button><button id="folB" style="flex:0 0 auto;background:#3d5a8a">Follow a man</button><button id="helpB" style="flex:0 0 auto" title="How to use this map">?</button><select id="spd"><option value="1">1× real time</option><option value="5">5×</option><option value="15" selected>15×</option><option value="30">30×</option><option value="60">60×</option></select>
   </div>
   <div class="row keep" style="margin:4px 0 2px"><button id="prevB" title="Previous part (←)">◀ Prev</button><div id="ticks"></div><button id="nextB" title="Next part (→)">Next ▶</button><label class="small" style="margin-left:8px;white-space:nowrap" title="When a phase ends, Play carries on into the next one"><input type="checkbox" id="cont" checked> Run on</label></div>
   <div id="evt"></div>
@@ -271,6 +271,7 @@ const sOfPt=(x,z)=>{ let best=1e18,s=0; for(const p of GFS){ const d=(p.x-x)**2+
 // distance from each German-front sample to the Black Line (drives the barrage lifts and infantry stop line)
 GFS.forEach(p=>{ p.dB=Math.abs(polyInfo(L_BLACK,p.x,p.z).d); });
 const CORPS_S0=DIVS[0].s0, CORPS_S1=DIVS[3].s1;
+function gfAtI(s){ const f=Math.max(0,Math.min(GFS.length-1.001,s/20)), k=Math.floor(f), t=f-k, a=GFS[k], c=GFS[k+1]; return {s,x:a.x+(c.x-a.x)*t,z:a.z+(c.z-a.z)*t,nx:a.nx+(c.nx-a.nx)*t,nz:a.nz+(c.nz-a.nz)*t}; }
 function gfAt(s){ let k=Math.max(0,Math.min(GFS.length-1,Math.round(s/20))); return GFS[k]; }
 function offPt(s,off){ const p=gfAt(s); return [p.x+p.nx*off, p.z+p.nz*off]; }
 function offLine(s0,s1,off){ const pts=[]; for(const p of GFS) if(p.s>=s0&&p.s<=s1) pts.push([p.x+p.nx*(typeof off==='function'?off(p.s):off), p.z+p.nz*(typeof off==='function'?off(p.s):off)]); return pts; }
@@ -1342,6 +1343,12 @@ function updBattalions(dt){ const show=UI.bn&&!(typeof FOL!=='undefined'&&FOL.ac
 // battalion orders of the kind quoted by the 54th Bn war diary, "four waves"): A and B companies side by side in front, each with two platoons
 // in the 1st wave and two in the 2nd; C and D behind them as the 3rd and 4th waves (supports and moppers-up).
 const WAVES=[0,-45,-110,-150];
+// Showcase battalion: The RCR (7th Bde), drawn section by section to SS 143 (Feb 1917) and the RCR war diary for 9 April:
+// "the leading two companies in waves at 20 paces distance and three paces interval, the two rear companies following at 50 paces distance in Artillery formation in file".
+// Platoon of 4 sections: bombers, Lewis gun, riflemen, rifle-grenadiers (30 men drawn per platoon). Moppers-up (the RCR had two platoons of the 49th Bn) drawn here as the rear companies' 4th platoons.
+BNS.forEach(b=>{ b.show=b.name==='RCR'; });
+const ROLE_COL={B:'#ffcf3f',L:'#c08cff',R:'#7fb6ff',G:'#66e08a',M:'#ffffff'};
+function roleOf(m){ if(m.c>=2&&m.pl===3) return 'M'; const i=m.mi; return i<8?'B':i<15?'L':i<23?'R':'G'; }
 const SUB=(()=>{ const men=[], coys=[];
   BNS.forEach((b,bi)=>{ const L=b.seg.length; if(L<2) return;
     for(let c=0;c<4;c++){ const left=c%2===0, front=c<2; { const q=bnFramePt(b,left?0.25:0.75,0), dc=Math.abs(polyInfo(CF,q[0],q[1]).d); coys.push({b,c,name:BRIGS[b.bi][0].replace(/th Bde|nd Bde|rd Bde|st Bde/,'')+'·'+b.name.replace(/(st|nd|rd|th)\b/,'').replace(' CMR','CMR').replace('PPCLI','PP')+'·'+'ABCD'[c],u:left?0.25:0.75,w:front?-22:-130,tw:front?-5:-dc-75}); }
@@ -1350,15 +1357,33 @@ const SUB=(()=>{ const men=[], coys=[];
           const tOff=wave===0?hh*1.5:wave===1?-10+hh*1.5:wave===2?-dc+hh*1.5:-dc-150+hh*1.5;    // waiting: 1st and 2nd waves in the jumping-off ditches, 3rd in the front line, 4th in the support trench
           const ap=bnFramePt(b,u,tOff), w=snapTr(wave<2?TRIX.ditch:wave===2?TRIX.cf:TRIX.sup,ap[0],ap[1]);
           b.nMen=(b.nMen||0)+1;
-          men.push({b,ci:coys.length-1,k:b.nMen-1,u,off:WAVES[wave]+hh*7,tOff,wx:w[0]+(wave===1?-b.p.nx*2:0),wz:w[1]+(wave===1?-b.p.nz*2:0),j:(hash(bi*1000+c*100+pl*30+m,9)-0.5)*4,dd:(hash(bi*1000+c*100+pl*30+m,11)-0.5)*12+(hash(bi*1000+c*100+pl*30+Math.floor(m/8),13)-0.5)*30,ua:(()=>{ const sc=Math.floor(m/8), uc=u0+(Math.min(29,sc*8+4)+0.5)/30*0.25; return uc+(u-uc)*0.55+(hash(bi*1000+c*100+pl*30+sc,14)-0.5)*0.03; })(),ph:hash(bi*1000+c*100+pl*30+m,12)*6.283}); } } } });
+          men.push({b,ci:coys.length-1,c,pl,mi:m,k:b.nMen-1,u,off:WAVES[wave]+hh*7,tOff,wx:w[0]+(wave===1?-b.p.nx*2:0),wz:w[1]+(wave===1?-b.p.nz*2:0),j:(hash(bi*1000+c*100+pl*30+m,9)-0.5)*4,dd:(hash(bi*1000+c*100+pl*30+m,11)-0.5)*12+(hash(bi*1000+c*100+pl*30+Math.floor(m/8),13)-0.5)*30,ua:(()=>{ const sc=Math.floor(m/8), uc=u0+(Math.min(29,sc*8+4)+0.5)/30*0.25; return uc+(u-uc)*0.55+(hash(bi*1000+c*100+pl*30+sc,14)-0.5)*0.03; })(),ph:hash(bi*1000+c*100+pl*30+m,12)*6.283}); } } } });
   const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(men.length*3),3));
-  { const C=new Float32Array(men.length*3), col=new THREE.Color(); men.forEach((m,i)=>{ const c=Math.floor((m.u<0.5?0:1)+(m.off<-60?2:0)); col.setHSL((198+m.b.bi*7)/360,0.9,0.72-c*0.07); C[i*3]=col.r; C[i*3+1]=col.g; C[i*3+2]=col.b; }); g.setAttribute('color',new THREE.BufferAttribute(C,3)); }
+  { const C=new Float32Array(men.length*3), col=new THREE.Color(); men.forEach((m,i)=>{ const c=Math.floor((m.u<0.5?0:1)+(m.off<-60?2:0)); col.setHSL((198+m.b.bi*7)/360,0.9,0.72-c*0.07); if(m.b.show) col.set(ROLE_COL[roleOf(m)]); C[i*3]=col.r; C[i*3+1]=col.g; C[i*3+2]=col.b; }); g.setAttribute('color',new THREE.BufferAttribute(C,3)); }
   const pts=new THREE.Points(g,new THREE.PointsMaterial({vertexColors:true,size:3,sizeAttenuation:false,depthTest:false,transparent:true,opacity:.95})); pts.renderOrder=8; pts.frustumCulled=false; pts.visible=false; scene.add(pts);
   const lt=(t)=>{ const c=document.createElement('canvas'); c.width=160; c.height=36; const x=c.getContext('2d'); x.font='bold 22px Georgia,serif'; x.textAlign='center'; x.lineWidth=5; x.strokeStyle='rgba(0,0,0,.85)'; x.strokeText(t,80,26); x.fillStyle='#cfe0ff'; x.fillText(t,80,26); return new THREE.CanvasTexture(c); };
   coys.forEach(k=>{ k.sp=new THREE.Sprite(new THREE.SpriteMaterial({map:lt(k.name),transparent:true,depthTest:false})); k.sp.renderOrder=9; k.sp.visible=false; scene.add(k.sp); });
   return {men,coys,pts}; })();
 UI.sub2=true;
 // where along a battalion's frontage (u: 0–1 from its first to last point) a man stands, at a given offset back from the leading wave
+function bSm(b,u){ const L=b.seg.length-1, f=Math.max(0,Math.min(1,u))*L, i=Math.min(L-1,Math.floor(f)); return b.seg[i][2]+(b.seg[i+1][2]-b.seg[i][2])*(f-i); }
+// lead line of the showcase battalion: walks (1 m/s) to 45 m behind each barrage step, then waits for the next lift
+function showLead(b,t){ if(b.gp===undefined){ let bi=0,bd=1e9; GFS.forEach((q,j)=>{ const d=Math.abs(q.s-b.s); if(d<bd){bd=d;bi=j;} }); b.gp=GFS[bi]; } const p=b.gp, dB=p.dB, F=x=>Math.min(dB,x), oJ=b.oJ===undefined?(b.oJ=polyInfo(GF,b.J[0],b.J[1]).d):b.oJ, k=Math.floor(t/180), Fk=F(barrageP1(t)-45), Fp=k===0?oJ:F(barrageP1(t-180)-45);
+  return Fp+(Fk-Fp)*Math.min(1,(t-k*180)/Math.max(1,Math.abs(Fk-Fp)/1.0)); }
+function showPos(b,m,t){ if(!b.Wm){ const a=bnFramePt(b,0,0), c=bnFramePt(b,1,0); b.Wm=Math.hypot(a[0]-c[0],a[1]-c[1]); }
+  const o=showLead(b,t), r=roleOf(m), mi=m.mi, W=b.Wm, wob=Math.sin(t/37+m.ph)*0.8;
+  if(m.c<2){ const sl=(m.c%2)*2+(m.pl%2), w=m.pl<2?0:1, l2=(r==='L'||r==='G'), outerL=sl<2;
+    const line=l2?['L','G']:['B','R'], ord=outerL?line:line.slice().reverse(), first=l2?(outerL?8:23):(outerL?0:15), n=l2?14:16;
+    let idx; if(l2){ idx=r==='L'?(mi-8):(mi-23); if(ord[0]!==r) idx+=r==='L'?7:7; } else { idx=r==='B'?mi:(mi-15); if(ord[0]!==r) idx+=8; }
+    const u=(sl+0.5)/4+(idx-(n-1)/2)*2.3/W; return [u+m.j*0.12/W, o-w*30-(l2?15:0)+wob+m.j*0.35]; }
+  if(m.pl<3){ const sec=mi<8?0:mi<15?1:mi<23?2:3, j=mi-[0,8,15,23][sec], uc=m.pl<2?(m.c%2)*0.5+(m.pl%2)*0.25+0.125:(m.c%2)*0.5+0.25;
+    const u=uc+[-15,-5,5,15][sec]/W; return [u, o-83-(m.pl<2?0:45)+[-8,0,0,-8][sec]-j*2+wob]; }
+  // moppers-up: pairs follow 10 m behind the leading companies' second wave; each pair drops into its German trench as the waves cross it and works outward along it
+  const P=((m.c-2)*30+mi)>>1, mem=mi&1, TT=TRL_G.filter(T=>T<b.gp.dB-20), oM=o-55, uF=(P+0.5)/30;
+  if(TT.length){ const ti=P%TT.length, T=TT[ti], rk=Math.floor(P/TT.length), nc=Math.ceil((30-ti)/TT.length);
+    if(oM>=T-3){ if(m.td===undefined||t<m.td) m.td=t; const uE=uF, uT=(rk+0.5)/nc, f=Math.min(1,(t-m.td)/150); return [uE+(uT-uE)*f+mem*1.6/W, T+(mem?1:-1)]; } else m.td=undefined; }
+  return [uF+mem*1.6/W, oM+wob]; }
+const TRL_G=[0,220,450,900,1500];
 function bnFramePt(b,u,off){ const L=b.seg.length-1, f=u*L, i=Math.min(L-1,Math.floor(f)), t=f-i, a=b.seg[i], c=b.seg[i+1];
   const x=a[0]+(c[0]-a[0])*t, z=a[1]+(c[1]-a[1])*t, nx=a[3]+(c[3]-a[3])*t, nz=a[4]+(c[4]-a[4])*t; return [x+nx*off,z+nz*off]; }
 // ================= every soldier: a dot from afar, a small figure close up (blue Canadian, red German) =================
@@ -1385,9 +1410,11 @@ function figGeo(german){ const parts=[]; const add=(g,x,y,z,rz)=>{ g=g.toNonInde
   const G=new THREE.BufferGeometry(); G.setAttribute('position',new THREE.BufferAttribute(pos,3)); G.setAttribute('normal',new THREE.BufferAttribute(nor,3)); return G; }
 const FIG_MAX=2500;
 const FIGS={A:new THREE.InstancedMesh(figGeo(false),new THREE.MeshLambertMaterial({color:0x5b8ef0}),FIG_MAX),G:new THREE.InstancedMesh(figGeo(true),new THREE.MeshLambertMaterial({color:0xe0604c}),FIG_MAX)};
+FIGS.A.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(FIG_MAX*3).fill(1),3);
 Object.values(FIGS).forEach(m=>{ m.count=0; m.frustumCulled=false; m.visible=false; scene.add(m); });
 const _m4=new THREE.Matrix4(), _q=new THREE.Quaternion(), _e=new THREE.Euler(), _p=new THREE.Vector3(), _sc=new THREE.Vector3();
-function putFig(mesh,x,z,nx,nz,crouch,k){ const y=meshY(x,z); _e.set(crouch?0:0,Math.atan2(-nz,nx),crouch?0:-0.12); _q.setFromEuler(_e); _p.set(x*S,y,z*S); _sc.set(S*k,S*k*(crouch?0.68:1),S*k); _m4.compose(_p,_q,_sc); mesh.setMatrixAt(mesh.count++,_m4); }
+const _fc=new THREE.Color(), _fw=new THREE.Color(1,1,1), _fm=new THREE.Color(0x5b8ef0), ROLE_FC={}; for(const r in ROLE_COL){ const c=new THREE.Color(ROLE_COL[r]); ROLE_FC[r]=new THREE.Color(c.r/_fm.r,c.g/_fm.g,c.b/_fm.b); }
+function putFig(mesh,x,z,nx,nz,crouch,k,role){ if(mesh===FIGS.A){ mesh.setColorAt(mesh.count,role?ROLE_FC[role]:_fw); mesh.instanceColor.needsUpdate=true; } const y=meshY(x,z); _e.set(crouch?0:0,Math.atan2(-nz,nx),crouch?0:-0.12); _q.setFromEuler(_e); _p.set(x*S,y,z*S); _sc.set(S*k,S*k*(crouch?0.68:1),S*k); _m4.compose(_p,_q,_sc); mesh.setMatrixAt(mesh.count++,_m4); }
 // brigade and division labels follow their battalions (behind them); back to their sectors when no battalion is on the map
 function updUnitLabels(){ const acc=BRIG_L.map(()=>[0,0,0,0,0]);
   for(const b of BNS){ const live=b.dc&&b.dcP===PH.n&&Math.abs(b.dcT-tNow)<900, c=live?b.dc:(PH.n>=1&&b.vis.visible&&b.pos?b.pos:null); if(!c) continue; const a=acc[b.bi]; a[0]+=c[0]; a[1]+=c[1]; a[2]+=b.p.nx; a[3]+=b.p.nz; a[4]++; }
@@ -1440,6 +1467,10 @@ function updSubUnits(){ const camY=camera.position.y, on=UI.bn&&UI.sub2&&camY<70
       if(q[4]<0.5&&figOn&&FIGS.A.count<FIG_MAX&&(x*S-tgt.x)**2+(z*S-tgt.z)**2<R2){ putFig(FIGS.A,x,z,q[2],q[3],false,k); P.setXYZ(i,0,-999,0); any=true; return; }
       P.setXYZ(i,x*S,meshY(x,z)-q[4]*EX*S+0.3,z*S); any=true; return; }
     if(!b.vis.visible||!b.pos){ P.setXYZ(i,0,-999,0); return; }
+    if(b.show&&PH.n===1&&tNow>=0){ const q=showPos(b,m,tNow), g=gfAtI(bSm(b,q[0])); let x=g.x+g.nx*q[1], z=g.z+g.nz*q[1]; const kk=ease(Math.min(1,tNow/120)); if(kk<1){ x=m.wx+(x-m.wx)*kk; z=m.wz+(z-m.wz)*kk; }
+      if(b.cons>0.01&&b.T1!==null&&roleOf(m)!=='M'){ const T=b.T1+((Math.floor(g.s/9))%2?3:-3); x+=(g.x+g.nx*T-x)*b.cons; z+=(g.z+g.nz*T-z)*b.cons; }
+      dAc(b,x,z,m); if(figOn&&FIGS.A.count<FIG_MAX&&(x*S-tgt.x)**2+(z*S-tgt.z)**2<R2){ putFig(FIGS.A,x,z,b.p.nx,b.p.nz,false,k,roleOf(m)); P.setXYZ(i,0,-999,0); any=true; return; }
+      P.setXYZ(i,x*S,meshY(x,z)+0.3,z*S); any=true; return; }
     const dx=b.pos[0]+b.p.nx*60-b.J[0], dz=b.pos[1]+b.p.nz*60-b.J[1]; const kk=kOut(b), q=bnFramePt(b,PH.n>=1?m.u+(m.ua-m.u)*Math.min(1,kk*(1-(b.cons||0))):m.u,m.off+(PH.n===0&&kk>0?60:0)), jj=m.j*1.6; let x=q[0]+dx+b.p.nz*jj, z=q[1]+dz-b.p.nx*jj;
     if(kk>0&&PH.n>=1){ const w=kk*(1-(b.cons||0)), fd=(m.dd+Math.sin(tNow/41+m.ph)*3.5)*w, fl=Math.sin(tNow/57+m.ph*1.7)*2.5*w; x+=b.p.nx*fd+b.p.nz*fl; z+=b.p.nz*fd-b.p.nx*fl; }   // men in the open do not keep perfect ranks: each is a few metres ahead or behind, and drifts
     if(kk<1){ x=m.wx+(x-m.wx)*kk; z=m.wz+(z-m.wz)*kk; }
