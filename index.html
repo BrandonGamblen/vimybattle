@@ -5,6 +5,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Vimy Ridge 1917 — Phase 1: Zero Hour</title>
+<meta name="description" content="Interactive 3D map of the Battle of Vimy Ridge, 9–12 April 1917: the preparation, the night march, the four Canadian divisions' attack hour by hour, Hill 145 and the Pimple.">
+<meta property="og:type" content="website"><meta property="og:url" content="https://vimybattle.com/"><meta property="og:title" content="Vimy Ridge 1917 — interactive 3D battle map">
+<meta property="og:description" content="Follow the Canadian Corps' attack on Vimy Ridge, 9–12 April 1917, phase by phase on a 3D map built from 1917 trench maps.">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%233b2f1e'/%3E%3Cpath d='M3 24 L11 13 L16 17 L22 8 L29 24 Z' fill='%23c9b27a'/%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
 :root{--bg:rgba(24,26,22,.9);--ink:#e8e4d6;--dim:#a9a593;--line:#4a4a3c;--al:#7fa0e8;--ge:#e2705c;--red:#d8503c;}
@@ -171,7 +176,7 @@ body.cine.tour #phase{display:block!important;top:8vh;bottom:auto;left:22vw;righ
    <tr><td>Shells allotted</td><td>1.6 million</td></tr>
    <tr><td>Barrage</td><td>Lifted 100 yd every 3 minutes</td></tr>
    <tr><td>Counter-battery</td><td>125,900 rounds in the final week; 83% of the 212 German guns located beforehand (Official History); how many were silenced is disputed</td></tr>
-   <tr><td>Subways</td><td>13, 265 m to 1.7 km long, about 10 m deep</td></tr>
+   <tr><td>Subways</td><td>11 to 13 (sources differ), 265 m to 1.7 km long, about 10 m deep</td></tr>
    <tr><td>Canadian losses, 9–12 Apr</td><td>10,602 (3,598 killed, 7,004 wounded)</td></tr>
   </table>
 
@@ -215,8 +220,11 @@ body.cine.tour #phase{display:block!important;top:8vh;bottom:auto;left:22vw;righ
   <details><summary id="evsum">All Phase 1 events</summary><div id="evlist" class="small"></div></details>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="three.min.js"></script>
+<script>if(!window.THREE) document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"><\/script>');</script>
+<script src="OrbitControls.js"></script>
+<script>if(!THREE.OrbitControls) document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"><\/script>');</script>
+<script>if(!window.THREE) document.addEventListener('DOMContentLoaded',()=>{ const b=document.querySelector('#intro .box'); if(b) b.innerHTML='<h2>The 3D map could not load</h2><p>A script it needs (three.js) was blocked or failed to download. Try reloading the page, or another network.</p>'; });</script>
 <script>
 const NOCINE=(/vimybattle\.com$/.test(location.hostname)&&!/[?&]cine/.test(location.search))||/[?&]nocine/.test(location.search);
 
