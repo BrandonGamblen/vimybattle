@@ -61,6 +61,7 @@ a{color:#c9b27a}
 #card h3{font-family:'IM Fell English SC',serif;font-weight:400;font-size:16px;margin:0 0 2px;color:#f2e6c4}
 #card{padding:6px 12px;font-size:12px;line-height:1.38}#card p{margin:2px 0}#card table{margin:2px 0}#card #cardCont{position:sticky;float:right;top:0;margin:0 0 2px 8px!important;padding:2px 8px}
 #phase.collapsed{top:10px;bottom:auto}
+#scaleBar{position:fixed;right:362px;bottom:14px;z-index:5;pointer-events:none;font:12px/1.2 'Inter',system-ui,sans-serif;color:#f2e6c4;text-shadow:0 1px 2px #000,0 0 3px #000;text-align:center}#sbBar{height:7px;border:2px solid #f2e6c4;border-top:none;box-shadow:0 1px 2px #000;margin:0 auto 3px}body.cine #scaleBar{display:none}
 #card p{margin:5px 0}#card table td:first-child{width:62%}
 #card .iva th{font:600 12px 'IBM Plex Sans';text-align:left;color:#f2e6c4;border-bottom:1px solid #4a4a3c;padding:3px}#card .iva td{width:50%}
 .lbl.call,.call{position:absolute;transform:translate(-50%,-120%);font:600 11.5px 'IBM Plex Sans';color:#111;background:#f7e7b8;border:1px solid #8a6a2a;border-radius:4px;padding:2px 6px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.6)}
@@ -135,7 +136,7 @@ body.cine.tour #phase{display:block!important;top:8vh;bottom:auto;left:22vw;righ
     <span style="background:rgb(70,100,170)"></span>Allied-held <span style="background:rgb(165,50,55);margin-left:6px"></span>German-held<br>
     <span style="background:#111"></span>Black <span style="background:#d23a2a"></span>Red <span style="background:#2f6fe0"></span>Blue <span style="background:#8a5a2b"></span>Brown objective lines<br>
     <span style="background:#ffb347"></span>Creeping barrage (band off by default) <br>The RCR (showcase battalion), by section: <span style="background:#ffcf3f"></span>bombers <span style="background:#c08cff"></span>Lewis gun <span style="background:#7fb6ff"></span>riflemen <span style="background:#66e08a"></span>rifle-grenadiers <span style="background:#ffffff"></span>moppers-up<br><span style="background:#9fc3ff"></span>Canadian infantry<br>
-    Grid: 1 km squares; 100 m squares when zoomed in. Lowest camera height: 20 m.
+    Grid: 1 km squares; 100 m squares when zoomed in. The scale bar (just above the time bar, on the right) shows which. Lowest camera height: 20 m.
   </div>
 
   <h2>Fire control</h2>
@@ -195,6 +196,7 @@ body.cine.tour #phase{display:block!important;top:8vh;bottom:auto;left:22vw;righ
   <details><summary>Sources</summary><div class="small" id="srcList" style="margin-top:4px"></div></details>
 </div>
 
+<div id="scaleBar"><div id="sbBar"></div><div id="sbTxt"></div></div>
 <div id="card"><button id="cardCont" style="background:#5b4a2a;border-color:#a8854a">▶ Continue</button><div id="cardBody"></div></div>
 <div id="phase">
   <div class="row keep" style="margin:0">
@@ -2662,7 +2664,15 @@ document.getElementById('tourB').onchange=e=>{ tourOn=e.target.checked; if(tourO
 // ================= main loop =================
 const vt=new THREE.Vector3(); let last=performance.now(), tick=0;
 function place2D(el,x,y,z){ vt.set(x,y,z).project(camera); if(vt.z>1||Math.abs(vt.x)>1.05||Math.abs(vt.y)>1.05){ el.style.display='none'; return; } el.style.display=''; el.style.left=((vt.x+1)/2*innerWidth)+'px'; el.style.top=((1-vt.y)/2*innerHeight)+'px'; }
-function loop(now){ if(!window.__ready){ window.__ready=1; setTimeout(()=>{ const b=document.getElementById('introGo'); if(b){ b.disabled=false; b.textContent='Start'; } },0); } const rdt=Math.max(0,(now-last)/1000), dt=Math.min(.1,rdt); last=now; if(rdt<1) fpsWatch(rdt); if(jumpA){ playing=false; stepJump(dt); }
+// scale bar: one grid square at the current zoom (1 km lines always; 100 m lines when close), measured on screen at the view centre
+let sbF=0; const _sa=new THREE.Vector3(), _sb=new THREE.Vector3(), _sr=new THREE.Vector3();
+function updScale(){ if(++sbF%6) return; const el=document.getElementById('scaleBar'); if(!gridMesh.visible){ el.style.display='none'; return; } el.style.display='';
+  const ph=document.getElementById('phase'), r=ph.getBoundingClientRect(); if(ph.classList.contains('collapsed')||document.body.classList.contains('cine')){ el.style.bottom='14px'; el.style.right=(innerWidth-r.right)+'px'; } else { el.style.bottom=(innerHeight-r.top+8)+'px'; el.style.right=(innerWidth-r.right)+'px'; }
+  const d=camera.position.distanceTo(controls.target), L=d<420?100:1000; _sr.setFromMatrixColumn(camera.matrixWorld,0).setY(0).normalize();
+  _sa.copy(controls.target).project(camera); _sb.copy(controls.target).addScaledVector(_sr,L*S).project(camera); let px=Math.abs(_sb.x-_sa.x)*innerWidth/2, n=1;
+  while(px*n<40&&n<10) n=n===1?2:n===2?5:10;
+  document.getElementById('sbBar').style.width=Math.round(px*n)+'px'; document.getElementById('sbTxt').textContent=(L===100?(n===1?'100 m':(100*n)+' m'):(n===1?'1 km':n+' km'))+(n===1?' = one grid square':''); }
+function loop(now){ if(!window.__ready){ window.__ready=1; setTimeout(()=>{ const b=document.getElementById('introGo'); if(b){ b.disabled=false; b.textContent='Start'; } },0); } const rdt=Math.max(0,(now-last)/1000), dt=Math.min(.1,rdt); last=now; updScale(); if(rdt<1) fpsWatch(rdt); if(jumpA){ playing=false; stepJump(dt); }
   if(tourOn&&!frozen&&playing){ const sh0=shotAt(tNow); if(sh0!==curShot){ curShot=sh0; sh0.go(); speed=sh0.speed; focusFB=(sh0.id==='fb'); setShotScene(PH.n===1?sh0.id:null); } }
   else if(!tourOn) focusFB=false;
   if(playing){ let sdt=dt*speed;
