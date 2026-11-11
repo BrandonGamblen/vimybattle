@@ -284,8 +284,10 @@ const sOfPt=(x,z)=>{ let best=1e18,s=0; for(const p of GFS){ const d=(p.x-x)**2+
 // distance from each German-front sample to the Black Line (drives the barrage lifts and infantry stop line)
 GFS.forEach(p=>{ p.dB=Math.abs(polyInfo(L_BLACK,p.x,p.z).d); });
 const CORPS_S0=DIVS[0].s0, CORPS_S1=DIVS[3].s1;
-function gfAtI(s){ const f=Math.max(0,Math.min(GFS.length-1.001,s/20)), k=Math.floor(f), t=f-k, a=GFS[k], c=GFS[k+1]; return {s,x:a.x+(c.x-a.x)*t,z:a.z+(c.z-a.z)*t,nx:a.nx+(c.nx-a.nx)*t,nz:a.nz+(c.nz-a.nz)*t}; }
-function gfAt(s){ let k=Math.max(0,Math.min(GFS.length-1,Math.round(s/20))); return GFS[k]; }
+// look up the German-front sample by its distance s (samples are 20 m apart within each map segment, so s/20 is not the index)
+function gfIdx(s){ let lo=0,hi=GFS.length-1; if(s<=GFS[0].s) return 0; if(s>=GFS[hi].s) return hi-1; while(hi-lo>1){ const m=(lo+hi)>>1; if(GFS[m].s<=s) lo=m; else hi=m; } return lo; }
+function gfAtI(s){ const k=gfIdx(s), a=GFS[k], c=GFS[k+1], t=Math.max(0,Math.min(1,(s-a.s)/Math.max(1e-6,c.s-a.s))); return {s,x:a.x+(c.x-a.x)*t,z:a.z+(c.z-a.z)*t,nx:a.nx+(c.nx-a.nx)*t,nz:a.nz+(c.nz-a.nz)*t,dB:a.dB+((c.dB||a.dB)-a.dB)*t}; }
+function gfAt(s){ const k=gfIdx(s); return (s-GFS[k].s)>(GFS[k+1].s-s)?GFS[k+1]:GFS[k]; }
 function offPt(s,off){ const p=gfAt(s); return [p.x+p.nx*off, p.z+p.nz*off]; }
 function offLine(s0,s1,off){ const pts=[]; for(const p of GFS) if(p.s>=s0&&p.s<=s1) pts.push([p.x+p.nx*(typeof off==='function'?off(p.s):off), p.z+p.nz*(typeof off==='function'?off(p.s):off)]); return pts; }
 function offLineF(s0,s1,f){ const pts=[]; for(const p of GFS) if(p.s>=s0&&p.s<=s1){ const o=f(p); pts.push([p.x+p.nx*o,p.z+p.nz*o]); } return pts; }
@@ -1355,7 +1357,7 @@ function updBattalions(dt){ const show=UI.bn&&!(typeof FOL!=='undefined'&&FOL.ac
     if(show&&PH.n===0){ if(tNow>=b.t0) tgt=bnAlong(b,(tNow-b.t0)/(b.t1-b.t0)); }
     else if(show&&front){ if(rebuild||!b.ft){ let best=1e18; for(const q of BARR.troop){ const dx=q[0]-b.p.x, dz=q[1]-b.p.z, fw=dx*b.p.nx+dz*b.p.nz, side=Math.abs(-dx*b.p.nz+dz*b.p.nx); if(fw<-400) continue; const sc=side+Math.max(0,-fw); if(sc<best){ best=sc; b.ft=[q[0]-b.p.nx*60,q[1]-b.p.nz*60]; } } if(best>400) b.ft=offPt(b.s,-120); } tgt=b.ft; }
     if(!tgt){ b.vis.visible=false; b.pos=null; b.ft=rebuild?null:b.ft; continue; }
-    if(!b.pos||jumpA||!playing) b.pos=tgt.slice(); else { const k=Math.min(1,dt*3); b.pos[0]+=(tgt[0]-b.pos[0])*k; b.pos[1]+=(tgt[1]-b.pos[1])*k; }
+    if(!b.pos||jumpA||!playing) b.pos=tgt.slice(); else if(front){ const dx=tgt[0]-b.pos[0], dz=tgt[1]-b.pos[1], d=Math.hypot(dx,dz), mx=1.2*dt*speed; if(d<=mx) b.pos=tgt.slice(); else { b.pos[0]+=dx/d*mx; b.pos[1]+=dz/d*mx; } } else { const k=Math.min(1,dt*3); b.pos[0]+=(tgt[0]-b.pos[0])*k; b.pos[1]+=(tgt[1]-b.pos[1])*k; }   /* in the attack the men walk, about 1.2 m/s, to each new barrage line: 91 m takes about 75 s of battle time */
     const y=meshY(b.pos[0],b.pos[1]), d=camera.position.distanceTo(vt.set(b.pos[0]*S,y,b.pos[1]*S)), h=Math.max(1.2,d*0.024);
     b.vis.scale.set(h*1.54,h,1); b.vis.position.set(b.pos[0]*S,y+h*0.62,b.pos[1]*S); b.vis.visible=true; } }
 // ================= companies and platoons: how a battalion fills its frontage (shown when the camera is low) =================
