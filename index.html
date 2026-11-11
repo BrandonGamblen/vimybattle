@@ -739,7 +739,7 @@ function updShocks(dt){ for(let i=shocks.length-1;i>=0;i--){ const e=shocks[i]; 
   const k=1-Math.pow(1-f,3); e.m.scale.setScalar(e.R*(0.05+0.95*k)); e.m.material.opacity=0.95*Math.pow(1-f,2); } }
 const effects=[];
 const RMOT=matchMedia('(prefers-reduced-motion: reduce)').matches;
-function addFx(tex,x,y,z,s0,s1,life,op,mode){ if(effects.length>520) return; if(tex===flashTex){ const d=Math.max(1,Math.hypot(camera.position.x-x,camera.position.y-y,camera.position.z-z)), f=Math.max(s0,s1)/d; if(f>0.12) op*=0.12/f; if(RMOT) op*=0.5; }   // a burst may not fill a large part of the screen with a bright flash (photosensitivity) const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false,opacity:op})); sp.position.set(x,y,z); sp.scale.set(s0,s0,1); fxRoot().add(sp); if(mode==='pop') sp.material.rotation=Math.random()*Math.PI; effects.push({sp,s0,s1,life,t:0,op,mode}); }
+function addFx(tex,x,y,z,s0,s1,life,op,mode){ if(effects.length>520) return; if(tex===flashTex){ const d=Math.max(1,Math.hypot(camera.position.x-x,camera.position.y-y,camera.position.z-z)), f=Math.max(s0,s1)/d; if(f>0.12) op*=0.12/f; if(RMOT) op*=0.5; }   /* a burst may not fill a large part of the screen with a bright flash (photosensitivity) */ const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false,opacity:op})); sp.position.set(x,y,z); sp.scale.set(s0,s0,1); fxRoot().add(sp); if(mode==='pop') sp.material.rotation=Math.random()*Math.PI; effects.push({sp,s0,s1,life,t:0,op,mode}); }
 
 // ================= gun models =================
 function wheelMesh(R,wood,dark){ const w=new THREE.Group(); w.add(new THREE.Mesh(new THREE.TorusGeometry(R*S,R*0.07*S,6,28),dark));
