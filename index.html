@@ -807,6 +807,9 @@ function ringLine(cx,cz,r,color,dashed,op){ const n=Math.min(900,Math.max(120,Ma
   const g=new THREE.BufferGeometry().setFromPoints(pts);
   const m=dashed?new THREE.LineDashedMaterial({color,dashSize:12,gapSize:9,transparent:true,opacity:op}):new THREE.LineBasicMaterial({color,transparent:true,opacity:op});
   const l=new THREE.LineSegments(g,m); if(dashed) l.computeLineDistances(); l.renderOrder=2; scene.add(l); return l; }
+// guns are drawn only when the camera is within about 3 km of them; further out each battery is its disc and label (the guns would be under a pixel anyway)
+let batLODf=0; const _bv=new THREE.Vector3();
+function updBatLOD(){ if(++batLODf%8) return; for(const b of batteries){ const near=camera.position.distanceTo(_bv.set(b.x*S,meshY(b.x,b.z),b.z*S))<300||selected===b||!!window.__CSON; if(b.lodNear!==near){ b.lodNear=near; b.pieces.forEach(p=>{ if(p.mesh) p.mesh.visible=near; }); } } }
 function addBattery(key,x,z,o){ const b=new Battery(key,x,z,o); batteries.push(b); return b; }
 function removeBattery(b){ b.destroy(); batteries=batteries.filter(o=>o!==b); if(selected===b) select(null); recomputeReach(); }
 
@@ -860,7 +863,7 @@ const BAND=(function(){
   const o=gfAt(DIVS[3].s0), side=(x,z)=>Math.sign(o.nx*(z-o.z)-o.nz*(x-o.x)), north=side(o.x,o.z-100);
   const K=[]; for(let k=0;k<N;k++){ const L1=dist(r[k][0],r[k][1],bl[k][0],bl[k][1]), L2=dist(bl[k][0],bl[k][1],br[k][0],br[k][1]);
     K.push({r:r[k],bl:bl[k],br:br[k],L1,L2,d1:[(bl[k][0]-r[k][0])/L1,(bl[k][1]-r[k][1])/L1],d2:[(br[k][0]-bl[k][0])/(L2||1),(br[k][1]-bl[k][1])/(L2||1)],
-      di:side(bl[k][0],bl[k][1])===north?2:3, s:sOfPt(r[k][0],r[k][1])}); }
+      di:sOfPt(r[k][0],r[k][1])<DIVS[3].s0?2:3, s:sOfPt(r[k][0],r[k][1])}); }   /* 2nd Division north of the 2nd/1st Division boundary, 1st Division south */
   return K; })();
 function bandPt(q,d){ if(d<=q.L1) return [q.r[0]+q.d1[0]*d,q.r[1]+q.d1[1]*d]; const e=d-q.L1; return [q.bl[0]+q.d2[0]*e,q.bl[1]+q.d2[1]*e]; }
 function bandDir(q,d){ return d<q.L1?q.d1:q.d2; }
@@ -1006,7 +1009,7 @@ const SHOTSP=[
 ];
 const SHOTSN=[
  {id:'n1',t0:T_NIGHT0,t1:T_BERTH,speed:90,track:true,go(){ camTo(-8200,-200,-1800,3200,2600,3); }},
- {id:'n2',t0:T_BERTH,t1:-16200,speed:300,track:true,go(){ const m=midGF(); camTo(m.x-m.nx*700,m.z-m.nz*700,-m.nx*2600-900,-m.nz*2600+1600,1500,3); }},
+ {id:'n2',t0:T_BERTH,t1:-16200,speed:300,track:true,go(){ const m=midGF(); camTo(m.x-m.nx*700,m.z-m.nz*700,-m.nx*1100-400,-m.nz*1100+700,700,3); }},
  {id:'n3',t0:-16200,t1:0,speed:220,go(){ const w=SUBW.grange; camTo(w.exit[0],w.exit[1],-w.p.nx*500-300,-w.p.nz*500+350,300,3); }},
 ];
 const SHOTSA=[
@@ -1351,7 +1354,7 @@ function trackHits(dt){ if(!(tourOn&&curShot&&curShot.hit&&PH.n===4&&playing&&!f
   let x=0,z=0; L.forEach(h=>{ x+=h[0]; z+=h[1]; }); x/=L.length; z/=L.length; const P=new THREE.Vector3(x*S,meshY(x,z),z*S), T=flyT<1?fly.t1:controls.target, k=Math.min(1,dt*0.4);
   const d=P.sub(T).multiplyScalar(k); d.y=0; if(flyT<1){ fly.t1.add(d); fly.c1.add(d); } else { controls.target.add(d); camera.position.add(d); } }
 function trackColumns(dt){ if(!(tourOn&&curShot&&curShot.track&&PH.n===0&&playing)) return; const v=BNS.filter(b=>b.vis.visible&&b.pos); if(!v.length) return;
-  let x=0,z=0; v.forEach(b=>{ x+=b.pos[0]; z+=b.pos[1]; }); x/=v.length; z/=v.length; const P=new THREE.Vector3(x*S,meshY(x,z),z*S), T=flyT<1?fly.t1:controls.target, k=Math.min(1,dt*0.5);
+  let x=0,z=0; v.forEach(b=>{ const Lt=b.L[b.L.length-1], D=Math.min(Lt,(tNow-b.t0)/(b.t1-b.t0)*Lt), q=pathAt(b,Math.max(0,D-240)); x+=q[0]; z+=q[1]; }); x/=v.length; z/=v.length;   /* the middle of the columns, not their heads */ const P=new THREE.Vector3(x*S,meshY(x,z),z*S), T=flyT<1?fly.t1:controls.target, k=Math.min(1,dt*0.5);
   const d=P.sub(T).multiplyScalar(k); d.y=0; if(flyT<1){ fly.t1.add(d); fly.c1.add(d); } else { controls.target.add(d); camera.position.add(d); } }
 function updBattalions(dt){ const show=UI.bn&&!(typeof FOL!=='undefined'&&FOL.active)&&!window.__CSON&&PH.n!==-1;
   const front=PH.n>=1, rebuild=front&&bnTroopT!==lastTroopT; if(rebuild) bnTroopT=lastTroopT;
@@ -1438,7 +1441,8 @@ FIGS.A.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(FIG_MAX
 Object.values(FIGS).forEach(m=>{ m.count=0; m.frustumCulled=false; m.visible=false; scene.add(m); });
 const _m4=new THREE.Matrix4(), _q=new THREE.Quaternion(), _e=new THREE.Euler(), _p=new THREE.Vector3(), _sc=new THREE.Vector3();
 const _fc=new THREE.Color(), _fw=new THREE.Color(1,1,1), _fm=new THREE.Color(0x5b8ef0), ROLE_FC={}; for(const r in ROLE_COL){ const c=new THREE.Color(ROLE_COL[r]); ROLE_FC[r]=new THREE.Color(c.r/_fm.r,c.g/_fm.g,c.b/_fm.b); }
-function putFig(mesh,x,z,nx,nz,crouch,k,role){ if(mesh===FIGS.A){ mesh.setColorAt(mesh.count,role?ROLE_FC[role]:_fw); mesh.instanceColor.needsUpdate=true; } const y=meshY(x,z); _e.set(crouch?0:0,Math.atan2(-nz,nx),crouch?0:-0.12); _q.setFromEuler(_e); _p.set(x*S,y,z*S); _sc.set(S*k,S*k*(crouch?0.68:1),S*k); _m4.compose(_p,_q,_sc); mesh.setMatrixAt(mesh.count++,_m4); }
+let _curM=null, _hitNow=false;   /* the man being placed; a man already hit is not drawn standing (he is an x) */
+function putFig(mesh,x,z,nx,nz,crouch,k,role){ if(mesh===FIGS.A){ if(_curM) _curM.lp=[x,z]; if(_hitNow) return; mesh.setColorAt(mesh.count,role?ROLE_FC[role]:_fw); mesh.instanceColor.needsUpdate=true; } const y=meshY(x,z); _e.set(crouch?0:0,Math.atan2(-nz,nx),crouch?0:-0.12); _q.setFromEuler(_e); _p.set(x*S,y,z*S); _sc.set(S*k,S*k*(crouch?0.68:1),S*k); _m4.compose(_p,_q,_sc); mesh.setMatrixAt(mesh.count++,_m4); }
 // brigade and division labels follow their battalions (behind them); back to their sectors when no battalion is on the map
 function updUnitLabels(){ const acc=BRIG_L.map(()=>[0,0,0,0,0]);
   for(const b of BNS){ const live=b.dc&&b.dcP===PH.n&&Math.abs(b.dcT-tNow)<900, c=live?b.dc:(PH.n>=1&&b.vis.visible&&b.pos?b.pos:null); if(!c) continue; const a=acc[b.bi]; a[0]+=c[0]; a[1]+=c[1]; a[2]+=b.p.nx; a[3]+=b.p.nz; a[4]++; }
@@ -1450,10 +1454,10 @@ function glowDot(){ const c=document.createElement('canvas'); c.width=c.height=3
 const FIGHT=(()=>{ const N=700, g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(N*3).fill(-999),3)); g.setAttribute('color',new THREE.Float32BufferAttribute(new Float32Array(N*3),3));
   const p=new THREE.Points(g,new THREE.PointsMaterial({map:glowDot(),size:9,sizeAttenuation:false,vertexColors:true,transparent:true,depthTest:false,blending:THREE.AdditiveBlending,depthWrite:false})); p.renderOrder=9; p.frustumCulled=false; scene.add(p);
   return {N,p,life:new Float32Array(N),max:new Float32Array(N),kind:new Uint8Array(N)}; })();
-function fightOn(t){ const n=PH.n; if(n===1) return t>=0&&t<3600; if(n===2) return (t>=4500&&t<14100)||t<14100; if(n===3) return t>=14700&&t<31200; if(n===4) return (t>=T85&&t<T85_END)||(t>=T10A&&t<T10A+1800)||(t>=T12&&t<T12_END); return false; }
+function fightOn(t){ const n=PH.n; if(n===1) return t>=0&&t<3600; if(n===2) return t>=4500&&t<14100; if(n===3) return t>=14700&&t<31200; if(n===4) return (t>=T85&&t<T85_END)||(t>=T10A&&t<T10A+1800)||(t>=T12&&t<T12_END); return false; }
 // only the part of the front that is actually attacking flashes: troop points with the barrage (or, with no barrage, the Phase 4 contact) within 450 m ahead
 function fightPts(){ if(fightPts.k===BARR.troop&&fightPts.f===BARR.field) return fightPts.v; fightPts.k=BARR.troop; fightPts.f=BARR.field;
-  const B=BARR.field||[]; fightPts.v=!B.length?(PH.n===4?BARR.troop:[]):BARR.troop.filter(q=>B.some(b=>{ const dx=b[0]-q[0], dz=b[1]-q[1], a=dx*q[3]+dz*q[4]; return a>-40&&a<450&&Math.abs(dx*q[4]-dz*q[3])<120; })); return fightPts.v; }
+  const B=BARR.field||[]; if(PH.n===4){ const c=tNow>=T12?pimMid():HILL145; fightPts.k=null; return BARR.troop.filter(q=>Math.hypot(q[0]-c[0],q[1]-c[1])<650); } fightPts.v=!B.length?[]:BARR.troop.filter(q=>B.some(b=>{ const dx=b[0]-q[0], dz=b[1]-q[1], a=dx*q[3]+dz*q[4]; return a>-40&&a<450&&Math.abs(dx*q[4]-dz*q[3])<120; })); return fightPts.v; }
 function updFight(dt){ const F=FIGHT, P=F.p.geometry.attributes.position, C=F.p.geometry.attributes.color, on=fightOn(tNow)&&BARR.troop.length>0&&!(typeof FOL!=='undefined'&&FOL.hideOv)&&!window.__CSON;
   F.p.visible=on; if(!on) return; const run=playing?1:0;
   for(let i=0;i<F.N;i++){ F.life[i]-=dt*run;
@@ -1464,6 +1468,10 @@ function updFight(dt){ const F=FIGHT, P=F.p.geometry.attributes.position, C=F.p.
     if(F.kind[i]) C.setXYZ(i,1.0*k,0.45*k,0.15*k); else C.setXYZ(i,1.0*k,0.78*k,0.3*k); }
   P.needsUpdate=true; C.needsUpdate=true; }
 var capVer=0;
+// the troop line point at front distance s (for 13–14 April, when the line runs across the plain)
+function troopAtB(b,u){ const V=BARR.troop, c=b.pos||[b.p.x,b.p.z]; if(b.l5f!==tNow||b.l5k!==V){ b.l5f=tNow; b.l5k=V; let bi=0,bd=1e18; V.forEach((q,k)=>{ const d=(q[0]-c[0])**2+(q[1]-c[1])**2; if(d<bd){bd=d;bi=k;} }); b.l5q=V[bi];
+    if(!b.Wm){ const a=bnFramePt(b,0,0), e=bnFramePt(b,1,0); b.Wm=Math.hypot(a[0]-e[0],a[1]-e[1]); } }
+  const nx=b.p.nx, nz=b.p.nz, w=(u-0.5)*b.Wm, ox=c[0]+b.p.nx*60, oz=c[1]+b.p.nz*60; return [ox+nz*w, oz-nx*w, 0, nx, nz]; }   /* 13–14 April: the men stand in a loose line along the new front, centred on their battalion */
 function updSubUnits(){ const camY=camera.position.y, on=UI.bn&&UI.sub2&&camY<700;
   { const cp=camera.position, key=on+'|'+tNow+'|'+PH.n+'|'+capVer+'|'+cp.x.toFixed(2)+','+cp.y.toFixed(2)+','+cp.z.toFixed(2)+'|'+(jumpA?Math.random():0); if(key===updSubUnits.k) return; updSubUnits.k=key; } SUB.pts.visible=false; GPTS.visible=false; CPTS.visible=false; XA.visible=false; XG.visible=false; FIGS.A.visible=FIGS.G.visible=false; SUB.coys.forEach(k=>k.sp.visible=false); if(!on) return;
   const figOn=camY<60, tgt=controls.target, R2=26*26, k=Math.max(1,Math.min(2.5,camera.position.distanceTo(tgt)/22));
@@ -1482,15 +1490,20 @@ function updSubUnits(){ const camY=camera.position.y, on=UI.bn&&UI.sub2&&camY<70
     b.cons=(b.cons||0)+(want-(b.cons||0))*(jumpA||!playing?1:0.04); b.o=o;
     const t1=TRL.filter(t=>t<=o-15&&t>=o-110); b.T1=t1.length?t1[t1.length-1]:null; b.T2=b.T1; }   // men only drop into a captured trench close behind the front; they never pull back to a distant one
   BNS.forEach(b=>b.dA=[0,0,0]); SUB.coys.forEach(c=>c.dA=[0,0,0]); const dAc=(b,x,z,m)=>{ const d=b.dA; d[0]+=x; d[1]+=z; d[2]++; const e=SUB.coys[m.ci].dA; e[0]+=x; e[1]+=z; e[2]++; };
-  SUB.men.forEach((m,i)=>{ const b=m.b;
+  SUB.men.forEach((m,i)=>{ const b=m.b; _curM=m; _hitNow=PH.n>=1&&m.tHit!==undefined&&tNow>=m.tHit;
     if(PH.n===0&&UI.bn){ // night of 8–9 April: the battalion marches in a column (about 1 m per man, two abreast) along its route and through its subway, then each man drops into his trench
       if(tNow<b.t0){ P.setXYZ(i,0,-999,0); return; } const Lt=b.L[b.L.length-1], D=(tNow-b.t0)/(b.t1-b.t0)*Lt, dm=D-m.k*1.0;
       if(dm<0){ P.setXYZ(i,0,-999,0); return; }
-      if(dm>=Lt){ if(figOn&&FIGS.A.count<FIG_MAX&&(m.wx*S-tgt.x)**2+(m.wz*S-tgt.z)**2<R2){ putFig(FIGS.A,m.wx,m.wz,b.p.nx,b.p.nz,true,k,b.show?roleOf(m):0); P.setXYZ(i,0,-999,0); } else P.setXYZ(i,m.wx*S,meshY(m.wx,m.wz)+0.3,m.wz*S); dAc(b,m.wx,m.wz,m); any=true; return; }
+      if(dm>=Lt){ const e=pathAt(b,Lt), ed=Math.hypot(m.wx-e[0],m.wz-e[1]), f=ed<1?1:Math.min(1,(dm-Lt)/ed), wx=e[0]+(m.wx-e[0])*f, wz=e[1]+(m.wz-e[1])*f;   /* from the end of the route he walks on to his own place in the trench */
+        if(figOn&&FIGS.A.count<FIG_MAX&&(wx*S-tgt.x)**2+(wz*S-tgt.z)**2<R2){ putFig(FIGS.A,wx,wz,b.p.nx,b.p.nz,f>=1,k,b.show?roleOf(m):0); P.setXYZ(i,0,-999,0); } else P.setXYZ(i,wx*S,meshY(wx,wz)+0.3,wz*S); dAc(b,wx,wz,m); any=true; return; }
       const q=pathAt(b,dm), side=(m.k%2?0.6:-0.6), x=q[0]-q[3]*side, z=q[1]+q[2]*side; dAc(b,x,z,m);
       if(q[4]<0.5&&figOn&&FIGS.A.count<FIG_MAX&&(x*S-tgt.x)**2+(z*S-tgt.z)**2<R2){ putFig(FIGS.A,x,z,q[2],q[3],false,k); P.setXYZ(i,0,-999,0); any=true; return; }
       P.setXYZ(i,x*S,meshY(x,z)-q[4]*EX*S+0.3,z*S); any=true; return; }
     if(!b.vis.visible||!b.pos){ P.setXYZ(i,0,-999,0); return; }
+    if(PH.n===5&&b.vis.visible&&BARR.troop.length){ // 13–14 April: each man keeps his place across the battalion's frontage and stands just behind the new line
+      const q=troopAtB(b,m.u), dep=12+(-m.off)*0.5+m.dd*0.4+Math.sin(tNow/57+m.ph)*2; let x=q[0]-q[3]*dep+q[4]*m.j*1.5, z=q[1]-q[4]*dep-q[3]*m.j*1.5;
+      dAc(b,x,z,m); if(figOn&&FIGS.A.count<FIG_MAX&&(x*S-tgt.x)**2+(z*S-tgt.z)**2<R2){ putFig(FIGS.A,x,z,q[3],q[4],false,k,b.show?roleOf(m):0); P.setXYZ(i,0,-999,0); any=true; return; }
+      P.setXYZ(i,x*S,meshY(x,z)+0.3,z*S); any=true; return; }
     if(b.show&&PH.n===1&&tNow>=0){ const q=showPos(b,m,tNow), g=gfAtI(bSm(b,q[0])); let x=g.x+g.nx*q[1], z=g.z+g.nz*q[1]; const kk=ease(Math.min(1,tNow/120)); if(kk<1){ x=m.wx+(x-m.wx)*kk; z=m.wz+(z-m.wz)*kk; }
       if(b.cons>0.01&&b.T1!==null&&roleOf(m)!=='M'){ const T=b.T1+((Math.floor(g.s/9))%2?3:-3); x+=(g.x+g.nx*T-x)*b.cons; z+=(g.z+g.nz*T-z)*b.cons; }
       dAc(b,x,z,m); if(figOn&&FIGS.A.count<FIG_MAX&&(x*S-tgt.x)**2+(z*S-tgt.z)**2<R2){ putFig(FIGS.A,x,z,b.p.nx,b.p.nz,false,k,roleOf(m)); P.setXYZ(i,0,-999,0); any=true; return; }
@@ -1503,11 +1516,12 @@ function updSubUnits(){ const camY=camera.position.y, on=UI.bn&&UI.sub2&&camY<70
     dAc(b,x,z,m);
     if(figOn&&FIGS.A.count<FIG_MAX&&(x*S-tgt.x)**2+(z*S-tgt.z)**2<R2){ putFig(FIGS.A,x,z,b.p.nx,b.p.nz,kk<0.5,k,b.show?roleOf(m):0); P.setXYZ(i,0,-999,0); any=true; return; }
     P.setXYZ(i,x*S,meshY(x,z)+0.3,z*S); any=true; });
+  _curM=null; _hitNow=false;
   BNS.forEach(b=>{ const d=b.dA; b.dc=d[2]?[d[0]/d[2],d[1]/d[2]]:null; b.dcT=tNow; b.dcP=PH.n; });
   // casualties: a man hit becomes an x where he fell and stays there
   { const XP=XA.geometry.attributes.position; let na=0;
     SUB.men.forEach((m,i)=>{ if(m.tHit===undefined||tNow<m.tHit||PH.n<1){ if(m.xp){ m.xp=null; } XP.setXYZ(i,0,-999,0); return; }
-      if(!m.xp){ const cx=P.getX(i), cy=P.getY(i), cz=P.getZ(i); if(cy<-900) { XP.setXYZ(i,0,-999,0); return; } const f=tNow>0?Math.max(0,Math.min(1,m.tHit/tNow)):1, wx=m.wx*S, wz=m.wz*S, x=wx+(cx-wx)*(tNow-m.tHit<240?1:f), z=wz+(cz-wz)*(tNow-m.tHit<240?1:f); m.xp=[x,meshY(x/S,z/S)+0.3,z]; }
+      if(!m.xp){ let cx=P.getX(i), cy=P.getY(i), cz=P.getZ(i); if(cy<-900&&m.lp){ cx=m.lp[0]*S; cz=m.lp[1]*S; cy=0; } if(cy<-900) { XP.setXYZ(i,0,-999,0); return; } const f=tNow>0?Math.max(0,Math.min(1,m.tHit/tNow)):1, wx=m.wx*S, wz=m.wz*S, x=wx+(cx-wx)*(tNow-m.tHit<240?1:f), z=wz+(cz-wz)*(tNow-m.tHit<240?1:f); m.xp=[x,meshY(x/S,z/S)+0.3,z]; }
       XP.setXYZ(i,m.xp[0],m.xp[1],m.xp[2]); P.setXYZ(i,0,-999,0); na++; });
     XP.needsUpdate=true; XA.visible=na>0; CAS.a=na; }
   P.needsUpdate=true; SUB.pts.visible=any;
@@ -1546,7 +1560,8 @@ function updCasPane(){ const el=document.getElementById('casBox'); if(!el) retur
   // counts worked out here so they are right at any camera height
   { let a=0; if(PH.n>=1) for(const m of SUB.men) if(m.tHit!==undefined&&tNow>=m.tHit) a++; CAS.a=a;
     let g=0,gp=0; const wd=PH.n===5&&tNow>=T_WD; GER.forEach(q=>{ let taken=false; if(capData){ const px=Math.round((q.x+MX)/(2*MX)*OW), py=Math.round((q.z+MZ)/(2*MZ)*OH); taken=px>=0&&py>=0&&px<OW&&py<OH&&capData[(py*OW+px)*4+3]>20; }
-      const prepX=q.prepHit!==null&&tNow>=q.prepHit&&PH.n!==5; if(prepX||(taken&&q.fate==='x')) g++; else if(taken||wd) gp++; }); CAS.g=g; CAS.gp=gp; } const f=casF(tNow), n=v=>Math.round(v).toLocaleString();
+      const prepX=q.prepHit!==null&&tNow>=q.prepHit; if(prepX||(taken&&q.fate==='x')) g++; else if(taken||wd) gp++; });
+    /* the counts only grow as the battle goes on: keep the highest value reached at any earlier time */ const H=updCasPane.hist||(updCasPane.hist=[]); H.push([tNow,g,gp]); if(H.length>4000) H.splice(0,2000); for(const [t0,g0,p0] of H) if(t0<=tNow){ if(g0>g) g=g0; if(p0>gp) gp=p0; } CAS.g=g; CAS.gp=gp; } const f=casF(tNow), n=v=>Math.round(v).toLocaleString();
   el.innerHTML=`<table>
   <tr><td colspan=2 class="small" style="color:var(--dim)">Whole battle, 9–12 April. Final totals are recorded; how they build up hour by hour is estimated.</td></tr>
   <tr><td><b>Canadian Corps</b></td><td></td></tr>
@@ -2679,6 +2694,10 @@ document.getElementById('tourB').onchange=e=>{ tourOn=e.target.checked; if(tourO
 
 // ================= main loop =================
 const vt=new THREE.Vector3(); let last=performance.now(), tick=0;
+// labels that would sit on top of each other: keep the more important one (objective lines, then divisions and brigades, then places and features)
+let dcF=0; const DPRI={obj:3,div:2};
+function declutter(){ if(++dcF%10) return; const L=staticLabels.filter(q=>q.el.style.display!=='none').sort((a,b)=>(DPRI[b.group]||1)-(DPRI[a.group]||1)), kept=[];
+  for(const q of L){ const r=q.el.getBoundingClientRect(); if(!r.width){ continue; } const hit=kept.some(k=>r.left<k.right-2&&r.right>k.left+2&&r.top<k.bottom-2&&r.bottom>k.top+2); q.el.style.visibility=hit?'hidden':''; if(!hit) kept.push(r); } }
 function place2D(el,x,y,z){ vt.set(x,y,z).project(camera); if(vt.z>1||Math.abs(vt.x)>1.05||Math.abs(vt.y)>1.05){ el.style.display='none'; return; } el.style.display=''; el.style.left=((vt.x+1)/2*innerWidth)+'px'; el.style.top=((1-vt.y)/2*innerHeight)+'px'; }
 // scale bar: one grid square at the current zoom (1 km lines always; 100 m lines when close), measured on screen at the view centre
 let sbF=0; const _sa=new THREE.Vector3(), _sb=new THREE.Vector3(), _sr=new THREE.Vector3();
@@ -2705,7 +2724,7 @@ function loop(now){ if(!window.__ready){ window.__ready=1; setTimeout(()=>{ cons
     shells=shells.filter(s=>!s.done);
     updatePhaseVisuals(false);
   }
-  updShocks(dt); updTracers(dt); updSnow(dt); updFollow(dt); updBattalions(dt); trackColumns(dt); trackHits(dt); trackLine(dt); trackRCR(dt); orbitShot(dt); updUnitLabels(); updSubUnits(); updFight(dt); updZeroBanner(); if((window.__fn||0)%5===0) updCasPane();
+  updShocks(dt); updTracers(dt); updSnow(dt); updFollow(dt); updBattalions(dt); trackColumns(dt); trackHits(dt); trackLine(dt); trackRCR(dt); orbitShot(dt); updUnitLabels(); updSubUnits(); updBatLOD(); updFight(dt); updZeroBanner(); if((window.__fn||0)%5===0) updCasPane();
   { const near=camera.position.distanceTo(controls.target)<45; if(near!==window.__shNear){ window.__shNear=near; renderer.shadowMap.needsUpdate=true; } renderer.shadowMap.autoUpdate=near;
     window.__fn=(window.__fn||0)+1; if(window.__fn%10===0) LODH.forEach(h=>{ const far=!window.__CSON&&camera.position.distanceTo(h.position)>160; if(far&&h.visible){ h.visible=false; h.userData.lodHid=true; } else if(!far&&h.userData.lodHid){ h.visible=true; h.userData.lodHid=false; } }); }
   { const hideOv=typeof FOL!=='undefined'&&FOL.hideOv; troopMeshes.forEach(m=>m.visible=UI.troop&&!hideOv); xhPts.visible=UI.xh||(tourOn&&!!curShot&&['adv','fp'].includes(curShot.id)); TRENCH3D.visible=camera.position.y<260; } skyDome.position.copy(camera.position); updSunShadow();
@@ -2720,6 +2739,7 @@ function loop(now){ if(!window.__ready){ window.__ready=1; setTimeout(()=>{ cons
   if(!window.NOCLAMP){ const cx0=camera.position.x/S, cz0=camera.position.z/S, gy=(FOL.active&&DIO.group?Math.max(meshY(cx0,cz0),DIO.y(cx0,cz0)):meshY(cx0,cz0))+(FOL.active?1.2:MIN_ALT)*S; if(camera.position.y<gy) camera.position.y=gy; const ty=meshY(controls.target.x/S,controls.target.z/S); if(controls.target.y<ty) controls.target.y=ty; }
   if(UI.lbl){ for(const b of batteries){ const near=b===selected||camera.position.distanceTo(b.group.position)<420; if(!near){ b.lbl.style.display='none'; continue; } place2D(b.lbl,b.x*S,meshY(b.x,b.z)+2+(b.vf||1)*1.1,b.z*S); }
     for(const L of staticLabels){ const vis=(L.group==='obj'&&!UI.obj)||(L.group==='div'&&!UI.div)||(L.group==='sub'&&!UI.sub)||(L.group==='call'&&camera.position.distanceTo(vt.set(L.x*S,meshY(L.x,L.z),L.z*S))>14); if(vis){L.el.style.display='none'; continue;} place2D(L.el,L.x*S,meshY(L.x,L.z)+L.lift,L.z*S); } }
+  declutter();
   tick+=dt; if(tick>.25){ tick=0; updTgtLine(); renderCmd(); if(!frozen) renderCard(); if(selected){ const s=document.getElementById('bstat'); if(s) s.textContent=selected.status; if(hoverR===null) drawChart(); } }
   if(CS.ok&&CS.on) CS.frame(dt); else renderer.render(scene,camera); requestAnimationFrame(loop); }
 
