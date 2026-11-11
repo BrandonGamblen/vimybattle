@@ -67,6 +67,7 @@ a{color:#c9b27a}
 #card h3{font-family:'IM Fell English SC',serif;font-weight:400;font-size:16px;margin:0 0 2px;color:#f2e6c4}
 #card{padding:6px 12px;font-size:12px;line-height:1.38}#card p{margin:2px 0}#card table{margin:2px 0}#card #cardCont{position:sticky;float:right;top:0;margin:0 0 2px 8px!important;padding:2px 8px}
 #phase.collapsed{top:10px;bottom:auto}
+#card.more{box-shadow:inset 0 -18px 12px -8px rgba(0,0,0,.6)}#card.more::after{content:'▾ more — click to expand';position:sticky;bottom:0;float:right;font-size:11px;color:#c8b483;background:rgba(20,18,12,.9);padding:0 6px;border-radius:3px}#card.open{max-height:65vh!important}#card.open::after{content:'▴ click to shrink'}#card{cursor:pointer}
 #scaleBar{position:fixed;right:362px;bottom:14px;z-index:5;pointer-events:none;font:12px/1.2 'Inter',system-ui,sans-serif;color:#f2e6c4;text-shadow:0 1px 2px #000,0 0 3px #000;text-align:center}#sbBar{height:7px;border:2px solid #f2e6c4;border-top:none;box-shadow:0 1px 2px #000;margin:0 auto 3px}body.cine #scaleBar{display:none}
 #card p{margin:5px 0}#card table td:first-child{width:62%}
 #card .iva th{font:600 12px 'IBM Plex Sans';text-align:left;color:#f2e6c4;border-bottom:1px solid #4a4a3c;padding:3px}#card .iva td{width:50%}
@@ -1004,7 +1005,7 @@ const SHOTSN=[
 ];
 const SHOTSA=[
  {id:'a1',t0:270000,t1:T_ADV,speed:2500,go(){ camTo(2600,-1200,-5200,3600,3000,3); }},
- {id:'a2',t0:T_ADV,t1:T_HALT,speed:900,go(){ camTo(3000,-1200,-3600,2600,2200,3); }},
+ {id:'a2',t0:T_ADV,t1:T_HALT,speed:900,go(){ camTo(2675,-965,-3600,2600,2200,3); }},
  {id:'a3',t0:T_HALT,t1:T_AFT1+1,speed:1500,go(){ camTo(4200,-800,-2800,2400,1800,3); }},
 ];
 PHASES[-1].shots=SHOTSP; PHASES[0].shots=SHOTSN; PHASES[5].shots=SHOTSA;
@@ -1251,7 +1252,7 @@ function setPhase(n,quiet){ if(typeof setShotScene==='function') setShotScene(nu
   document.getElementById('phSub').textContent=PH.sub; document.getElementById('hDate').textContent={'-1':'20 March – 8 April 1917','0':'8–9 April 1917','4':'9–12 April 1917','5':'13–14 April 1917'}[n]||'9 April 1917'; jumpA=null; if(!tourOn) speed=userSpeed(); document.getElementById('evsum').textContent=`All events: ${PH.label}`; document.title='Vimy Ridge 1917 — '+PH.title;
   renderEvents(); updatePhaseVisuals(true); renderCard(); if(!quiet) log(`${PH.label} loaded. Press ▶ Play or drag the timeline.`);
   try{ history.replaceState(null,'','#phase'+n); }catch(e){} }
-document.getElementById('phSel').onchange=e=>setPhase(+e.target.value);
+document.getElementById('phSel').onchange=e=>{ setPhase(+e.target.value); if(tourOn){ const sh=shotAt(tNow); if(sh){ curShot=sh; sh.go(); renderCard(); } } };
 document.getElementById('prevB').onclick=()=>goPart(-1); document.getElementById('nextB').onclick=()=>goPart(1);
 addEventListener('keydown',e=>{ if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT'||(selected&&selected.mission==='manual')) return; if(e.key==='ArrowRight'){ goPart(1); e.preventDefault(); } else if(e.key==='ArrowLeft'){ goPart(-1); e.preventDefault(); } });
 const userSpeed=()=>+document.getElementById('spd').value*(PH.spdMul||1);
@@ -1554,7 +1555,7 @@ function updCasPane(){ const el=document.getElementById('casBox'); if(!el) retur
   <tr><td>Germans captured or gone</td><td class="mono red">${CAS.gp.toLocaleString()}</td></tr></table>`; }
 // zero hour and the Pimple: whistles, and the men going over the top
 const ZB=[[0,'05:30, 9 April · <b>Zero hour.</b> Officers blow their whistles and the first wave climbs out of the jumping-off ditches and goes over the top, behind the barrage.'],[257400,'05:00, 12 April · <b>The Pimple.</b> Whistles blow and the 10th Brigade goes over the top in a snowstorm.']];
-function updZeroBanner(){ const el=document.getElementById('zban'); if(!el) return; let msg=null; for(const [t,h] of ZB) if(tNow>=t&&tNow<t+150) msg=h; el.style.display=msg?'':'none'; if(msg&&el.dataset.m!==msg){ el.innerHTML='🎺 '+msg; el.dataset.m=msg; } }
+function updZeroBanner(){ const el=document.getElementById('zban'); if(!el) return; let msg=null; for(const [t,h] of ZB) if(tNow>=t&&tNow<t+150) msg=h; el.style.display=msg?'':'none'; if(msg){ const c=document.getElementById('card'), r=c&&c.offsetParent?c.getBoundingClientRect():null; el.style.top=(r&&r.height?r.bottom+8:64)+'px'; } if(msg&&el.dataset.m!==msg){ el.innerHTML='🎺 '+msg; el.dataset.m=msg; } }
 const addSide=document.getElementById('addSide'),addType=document.getElementById('addType');
 function fillTypes(){ addType.innerHTML=Object.entries(TYPES).filter(([k,t])=>t.side===addSide.value).map(([k,t])=>`<option value="${k}">${t.name} — ${fmt(t.range)} m</option>`).join(''); }
 addSide.onchange=fillTypes; fillTypes();
@@ -1564,7 +1565,7 @@ document.getElementById('srcList').innerHTML=SOURCES.map(([t,u])=>`<div><a href=
 function setMouse(e){ const r=canvasEl.getBoundingClientRect(); mouse.x=(e.clientX-r.left)/r.width*2-1; mouse.y=-(e.clientY-r.top)/r.height*2+1; ray.setFromCamera(mouse,camera); }
 function terrainHit(){ const h=ray.intersectObject(terrain,false)[0]; return h?[h.point.x/S,h.point.z/S]:null; }
 // the guided camera is handed over only when someone actually moves the camera (drag or scroll), not on a click
-function releaseTour(){ if(!(tourOn&&playing&&!frozen)) return; setShotScene(null); tourOn=false; document.getElementById('tourB').checked=false; speed=userSpeed(); focusFB=false; renderCard(); log('Guided camera off — tick "Guided camera" to hand it back.'); }
+function releaseTour(){ if(!(tourOn&&!frozen)) return; setShotScene(null); tourOn=false; document.getElementById('tourB').checked=false; speed=userSpeed(); focusFB=false; renderCard(); log('Guided camera off — tick "Guided camera" to hand it back.'); }
 let dragFrom=null; addEventListener('pointerup',()=>dragFrom=null);
 addEventListener('pointermove',e=>{ if(dragFrom&&e.buttons&&Math.hypot(e.clientX-dragFrom[0],e.clientY-dragFrom[1])>6){ dragFrom=null; releaseTour(); } });
 canvasEl.addEventListener('wheel',()=>releaseTour(),{passive:true});
@@ -2534,7 +2535,7 @@ const SHOTS2=[
  {id:'p2over',t0:3300,t1:4300,speed:10,go(){ const m=gfAt((CORPS_S0+CORPS_S1)/2); camTo(m.x+m.nx*900,m.z,-m.nx*4600-1200,-m.nz*4600+2400,2400,3); }},
  {id:'p2red',t0:4300,t1:6900,speed:20,rcr:true,go(){ const f=rcrFrame(); camTo(f[0],f[1],f[2],f[3],f[4],3); }},
  {id:'p2til',t0:6900,t1:8700,speed:20,go(){ const d=DIVS[2],m=gfAt((d.s0+d.s1)/2); camTo(m.x+m.nx*m.dB,m.z+m.nz*m.dB,-m.nx*1500-600,-m.nz*1500+1000,700,3); }},
- {id:'h145',t0:8700,t1:12600,speed:30,go(){ camTo(HILL145[0]-250,HILL145[1]+100,-700,750,380,3.5); }},
+ {id:'h145',t0:8700,t1:12600,speed:30,go(){ camTo(HILL145[0]-150,HILL145[1]-10,-700,750,380,3.5); }},
  {id:'flank',t0:12600,t1:14101,speed:20,go(){ const d=DIVS[1],m=gfAt(d.s0+200); camTo(m.x+m.nx*m.dR*0.6,m.z+m.nz*m.dR*0.6,-900,1100,650,3); }},
 ];
 function card2(id){
@@ -2576,12 +2577,12 @@ function noBarrageModel(){ const H=HILL145, g=batteries.filter(b=>b.key==='a18')
   return {r, sg, short100:Phi(-100/sg), short50:Phi(-50/sg)}; }
 const pimMid=()=>{ const q=PIM[Math.floor(PIM.length/2)]; return [q.p.x+q.p.nx*q.d*0.6,q.p.z+q.p.nz*q.d*0.6]; };
 const SHOTS4=[
- {id:'p4dusk',t0:43200,t1:45000,speed:30,hit:true,go(){ camTo(HILL145[0]-250,HILL145[1]+100,-800,800,420,3.5); }},
- {id:'p485',t0:45000,t1:50400,speed:45,hit:true,go(){ camTo(HILL145[0]-150,HILL145[1],-420,520,200,3); }},
+ {id:'p4dusk',t0:43200,t1:45000,speed:30,hit:true,go(){ camTo(HILL145[0]-150,HILL145[1]-10,-800,800,420,3.5); }},
+ {id:'p485',t0:45000,t1:50400,speed:45,hit:true,go(){ camTo(HILL145[0]-70,HILL145[1]-90,-420,520,200,3); }},
  {id:'p4night',t0:50400,t1:115200,speed:1500,hit:true,go(){ camTo(HILL145[0]+200,HILL145[1],-1600,1500,1100,3); }},
  {id:'p4h145',t0:115200,t1:126000,speed:90,hit:true,go(){ camTo(HILL145[0]+250,HILL145[1]-50,-700,700,380,3); }},
  {id:'p4wait',t0:126000,t1:255600,speed:3000,hit:true,go(){ const q=pimMid(); camTo(q[0],q[1],-1800,1700,1200,3); }},
- {id:'p4pim',t0:255600,t1:270001,speed:90,hit:true,go(){ const q=pimMid(); camTo(q[0],q[1],-1100,1000,600,3); }},
+ {id:'p4pim',t0:255600,t1:270001,speed:90,hit:true,go(){ const q=pimMid(); camTo(q[0]-180,q[1]+165,-1100,1000,600,3); }},
 ];
 function card4(id){
   if(id==='p4dusk') return `<h3>Hill 145 at dusk, 9 April</h3><p>Three divisions are on their final objectives. Only the 4th Division is short of its line: the summit of Hill 145 is still German, and so is the Pimple to the north. The highest point of the ridge looks down on the Canadians on both sides of it.</p><p>The last reserve to hand is the 85th Battalion, until now used for carrying and digging. It has never been in a battle.</p>`;
@@ -2679,8 +2680,8 @@ function updScale(){ if(++sbF%6) return; const el=document.getElementById('scale
   const ph=document.getElementById('phase'), r=ph.getBoundingClientRect(); if(ph.classList.contains('collapsed')||document.body.classList.contains('cine')){ el.style.bottom='14px'; el.style.right=(innerWidth-r.right)+'px'; } else { el.style.bottom=(innerHeight-r.top+8)+'px'; el.style.right=(innerWidth-r.right)+'px'; }
   const d=camera.position.distanceTo(controls.target), L=d<420?100:1000; _sr.setFromMatrixColumn(camera.matrixWorld,0).setY(0).normalize();
   _sa.copy(controls.target).project(camera); _sb.copy(controls.target).addScaledVector(_sr,L*S).project(camera); let px=Math.abs(_sb.x-_sa.x)*innerWidth/2, n=1;
-  while(px*n<40&&n<10) n=n===1?2:n===2?5:10;
-  document.getElementById('sbBar').style.width=Math.round(px*n)+'px'; document.getElementById('sbTxt').textContent=(L===100?(n===1?'100 m':(100*n)+' m'):(n===1?'1 km':n+' km'))+(n===1?' = one grid square':''); }
+  while(px*n<40&&n<10) n=n===1?2:n===2?5:10; let sub=1; if(L===100) while(px*sub>260&&sub>0.1) sub=sub===1?0.5:sub===0.5?0.2:0.1;
+  document.getElementById('sbBar').style.width=Math.round(px*n*sub)+'px'; document.getElementById('sbTxt').textContent=sub<1?Math.round(100*sub)+' m':(L===100?(n===1?'100 m':(100*n)+' m'):(n===1?'1 km':n+' km'))+(n===1?' = one grid square':''); }
 function loop(now){ if(!window.__ready){ window.__ready=1; setTimeout(()=>{ const b=document.getElementById('introGo'); if(b){ b.disabled=false; b.textContent='Start'; } },0); } const rdt=Math.max(0,(now-last)/1000), dt=Math.min(.1,rdt); last=now; updScale(); if(rdt<1) fpsWatch(rdt); if(jumpA){ playing=false; stepJump(dt); }
   if(tourOn&&!frozen&&playing){ const sh0=shotAt(tNow); if(sh0!==curShot){ curShot=sh0; sh0.go(); speed=sh0.speed; focusFB=(sh0.id==='fb'); setShotScene(PH.n===1?sh0.id:null); } }
   else if(!tourOn) focusFB=false;
@@ -2732,6 +2733,9 @@ document.getElementById('pplClose').onclick=()=>{ document.getElementById('peopl
 // the guided-camera card is a thin bar across the top; when the time bar is collapsed it sits at the top and the card goes just under it
 function placeCard(){ const ph=document.getElementById('phase'), c=document.getElementById('card'); c.style.top=ph.classList.contains('collapsed')?(ph.getBoundingClientRect().bottom+6)+'px':''; }
 addEventListener('resize',placeCard);
+// the top card is a thin bar; when its text is longer than the bar it says so, and a click opens it fully
+setInterval(()=>{ const c=document.getElementById('card'); if(!c) return; c.classList.toggle('more',c.scrollHeight>c.clientHeight+4||c.classList.contains('open')); },500);
+document.getElementById('card').addEventListener('click',e=>{ if(e.target.closest('button,a,input,select')) return; e.currentTarget.classList.toggle('open'); });
 // collapsible info boxes: small toggle in each box's top-right corner
 document.querySelectorAll('#left,#right,#caption,#phase').forEach(p=>{
   const b=document.createElement('button'); b.className='tg'; b.title='Collapse / expand'; b.textContent='▾';
