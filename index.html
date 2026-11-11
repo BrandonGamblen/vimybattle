@@ -421,10 +421,10 @@ const TEX=(function(){
     for(let i=0;i<N*N;i++){ const x=i%N, y=(i/N)|0, tw=0.5+0.5*Math.sin((x+y)/N*Math.PI*2*48); H[i]=tw*0.6+F[i]*0.5; }
     T.wool=canvasTex(N,i=>{ const v=0.78+H[i]*0.22+(G[i]-0.5)*0.25; return [v,v,v]; }); T.woolN=normalTex(N,H,2.2); }
   // --- burlap (sandbags): plain weave, fibre noise, mud stains
-  { const N=256, F=fbm(N,64,2,41), St=fbm(N,3,4,42), H=new Float32Array(N*N), th=40;
+  { const N=256, F=fbm(N,64,2,41), St=fbm(N,3,4,42), H=new Float32Array(N*N), th=96;
     for(let i=0;i<N*N;i++){ const x=i%N, y=(i/N)|0, u=x/N*th, v=y/N*th, cu=Math.floor(u), cv=Math.floor(v), fu=u-cu, fv=v-cv, over=((cu+cv)&1)===0;
       const warp=Math.sin(fu*Math.PI), weft=Math.sin(fv*Math.PI); H[i]=(over?warp*0.7+weft*0.3:weft*0.7+warp*0.3)+F[i]*0.4; }
-    T.burlap=canvasTex(N,i=>{ const st=sat((St[i]-0.52)*4); let c=[0.38+H[i]*0.12,0.33+H[i]*0.1,0.23+H[i]*0.07]; c=lerp3(c,[0.2,0.16,0.11],sat(st*1.3)*0.85); return c; });
+    T.burlap=canvasTex(N,i=>{ const st=sat((St[i]-0.52)*4); let c=[0.36+H[i]*0.07,0.33+H[i]*0.06,0.26+H[i]*0.045]; const mud=sat((St[i]-0.38)*2.6); c=lerp3(c,[0.17,0.145,0.115],mud*0.9); c=lerp3(c,[0.27,0.25,0.22],sat((F[i]-0.6)*3)*0.5); return c; });
     T.burlapN=normalTex(N,H,3); }
   // --- canvas webbing (Pattern 1908 / Oliver)
   { const N=128, F=fbm(N,32,2,51), H=new Float32Array(N*N);
@@ -1633,14 +1633,25 @@ const LODH=[];
 function figure(color,ghost,kit){ if(!ghost){ const h=human({side:'G',kit:kit===undefined?'rifle':kit}); h.scale.setScalar(S); poseHuman(h,'stand',0); LODH.push(h); h.userData.m={color:{setHex(){}}}; return h; }
   const g=new THREE.Group(); const m=new THREE.MeshLambertMaterial({color,transparent:!!ghost,opacity:ghost?0.6:1,depthTest:!ghost});
   const b=new THREE.Mesh(figGeoB,m); b.position.y=0.62*S; const h=new THREE.Mesh(figGeoH,m); h.position.y=1.42*S; g.add(b,h); g.userData.m=m; if(ghost){ b.renderOrder=h.renderOrder=9; } return g; }
-const bagGeo=(function(){ const g=new THREE.BoxGeometry(0.6,0.28,0.36,6,3,4), P=g.attributes.position;   // pillow shape: squeezed toward the seams
-  for(let i=0;i<P.count;i++){ const x=P.getX(i)/0.3, y=P.getY(i)/0.14, z=P.getZ(i)/0.18, sq=(1-0.35*Math.pow(Math.abs(x),4))*(1-0.3*Math.pow(Math.abs(z),4)), sz=1-0.25*Math.pow(Math.abs(x),3);
-    P.setY(i,P.getY(i)*sq); P.setZ(i,P.getZ(i)*sz); P.setX(i,P.getX(i)*(1-0.08*Math.pow(Math.abs(y),2))); }
-  g.scale(S,S,S); g.computeVertexNormals(); return g; })(), bagMat=kindMat('burlap',0xffffff);
-function bagsMesh(list,mat,parent){ const im=new THREE.InstancedMesh(bagGeo,mat||bagMat,list.length), o=new THREE.Object3D(), c=new THREE.Color();
-  list.forEach((p,i)=>{ const j=hash(i,list.length); o.position.set(p[0],p[1],p[2]); o.rotation.set((j-0.5)*0.12,(p[3]||0)+(hash(i,7)-0.5)*0.25,(hash(i,9)-0.5)*0.1); o.scale.set((p[4]||1)*(0.92+0.16*j),0.9+0.2*hash(i,3),0.95+0.1*hash(i,5)); o.updateMatrix(); im.setMatrixAt(i,o.matrix);
-    if(!mat){ const v=0.42+0.16*hash(i,11); c.setRGB(v,v*(0.9+0.05*hash(i,13)),v*(0.74+0.1*hash(i,17))); im.setColorAt(i,c); } });   /* sodden, mud-stained sacking */
-  im.castShadow=im.receiveShadow=true; (parent||scene).add(im); return im; }
+// sandbags: five hand-filled shapes, none of them square: each slumps under its own weight, bulges unevenly, has one tied end and a lumpy, uneven fill
+const BAG_GEOS=[0,1,2,3,4].map(v=>{ const g=new THREE.BoxGeometry(0.6,0.26,0.36,12,5,7), P=g.attributes.position, r=k=>rnd(v*31+k);
+  for(let i=0;i<P.count;i++){ let x=P.getX(i), y=P.getY(i), z=P.getZ(i); const ux=x/0.3, uy=y/0.13, uz=z/0.18;
+    const sq=(1-0.4*Math.pow(Math.abs(ux),3))*(1-0.35*Math.pow(Math.abs(uz),3)); y*=sq; z*=1-0.22*Math.pow(Math.abs(ux),3);   // pillow, squeezed at the seams
+    if(uy<0) { y*=0.55; z*=1.08; x*=1.03; }                                                                           // slumped: flat, spread underside
+    const tie=ux>0.7?Math.pow((ux-0.7)/0.3,2):0; y*=1-0.55*tie; z*=1-0.6*tie; x+=tie*0.05*(r(1)-0.2);                      // tied end, gathered and flopped
+    const n=vnoise(ux*1.7+v*3.1,uz*1.9+uy*1.3+v)-0.5, n2=vnoise(ux*4.1+v,uz*3.7-v)-0.5; const bump=1+n*0.28+n2*0.1;          // lumpy fill
+    y=(uy>0?y*bump+ (r(2)-0.5)*0.03*ux:y); z*=1+n*0.12; x*=1+n2*0.04;
+    y+=0.025*(r(3)-0.5)*ux+0.02*(r(4)-0.5)*uz;                                                                          // sits unevenly
+    P.setXYZ(i,x,y,z); }
+  g.scale(S,S,S); g.computeVertexNormals(); return g; });
+const bagGeo=BAG_GEOS[0], bagMat=kindMat('burlap',0xffffff);
+function bagsMesh(list,mat,parent){ const groups=BAG_GEOS.map(()=>[]); list.forEach((p,i)=>groups[Math.floor(hash(i,list.length+3)*BAG_GEOS.length)%BAG_GEOS.length].push([p,i])); const out=new THREE.Group(); (parent||scene).add(out);
+  const o=new THREE.Object3D(), c=new THREE.Color();
+  groups.forEach((L,gi)=>{ if(!L.length) return; const im=new THREE.InstancedMesh(BAG_GEOS[gi],mat||bagMat,L.length);
+    L.forEach(([p,i],k)=>{ const j=hash(i,list.length); o.position.set(p[0],p[1],p[2]); o.rotation.set((j-0.5)*0.22,(p[3]||0)+(hash(i,7)-0.5)*0.55,(hash(i,9)-0.5)*0.2); o.scale.set((p[4]||1)*(0.86+0.28*j),0.82+0.3*hash(i,3),0.9+0.2*hash(i,5)); o.updateMatrix(); im.setMatrixAt(k,o.matrix);
+      if(!mat){ const mud=hash(i,19), v=(0.3+0.26*hash(i,11))*(mud<0.3?0.7:1); c.setRGB(v,v*(0.9+0.06*hash(i,13)),v*(0.78+0.12*hash(i,17))); im.setColorAt(k,c); } });   /* sodden, mud-stained, each a different shade */
+    im.castShadow=im.receiveShadow=true; out.add(im); });
+  return out; }
 function callout(text,x,z,liftM){ return addLabel('call',text,x,z,'call',liftM*S); }   // lift in metres
 const FP={}, FB={}, DUG_DEPTH=8;   // dugout depth is illustrative: no source found giving a depth for these dugouts
 function buildFP(){
@@ -2137,7 +2148,11 @@ function buildDiorama(cx,cz,dir,opt){ clearDiorama(); const G=new THREE.Group();
   // trench: sandbag parapet, timber revetment on both walls, duckboards on the floor
   if(tr){ const bags=[], wood=(DIO.woodM||(DIO.woodM=new THREE.MeshStandardMaterial({map:TEX.wood,color:0x4a4034,roughness:0.85,envMapIntensity:0.2}))), posts=[], boards=[], duck=[];
     for(let i=0;i<tr.length-1;i++){ const [ax,az]=tr[i],[bx2,bz]=tr[i+1], L=Math.hypot(bx2-ax,bz-az), ux=(bx2-ax)/L, uz=(bz-az)/L, nx=-uz, nz=ux, ry=Math.atan2(ux,uz)+Math.PI/2;
-      for(let d=0;d<L;d+=0.6){ const lx=ax+ux*d, lz=az+uz*d, off=WR?1.45+1.45+1.1*vnoise(lx*0.4,lz*0.4+3)+0.3:2.15, bx=cx+lx+fx*off, bz=cz+lz+fz*off;   /* the parapet stands just beyond the lip of the (wrecked) trench */ let base=1e9; for(const [ox,oz] of [[0,0],[0.35,0],[-0.35,0],[0,0.25],[0,-0.25]]) base=Math.min(base,DIO.y(bx+ux*ox+fx*oz,bz+uz*ox+fz*oz)); let top=WR?Math.floor(rnd(Math.round(d*10)+i*977+51)*3.6):3; for(let k=0;k<Math.min(3,top);k++){ const x=bx+ux*(k%2)*0.3, z=bz+uz*(k%2)*0.3; bags.push([x*S,base+(0.1+k*0.21)*S,z*S,ry,0,k]); } if(WR&&top<3){ const a2=rnd(Math.round(d*10)+i*977+99)*6.28, r2=0.6+rnd(Math.round(d*10)+i*977+7)*1.6, x=bx+Math.cos(a2)*r2, z=bz+Math.sin(a2)*r2; bags.push([x*S,DIO.y(x,z)+0.09*S,z*S,ry+a2,0,9]); } }   /* a wrecked parapet loses its upper bags first; the ones blown off lie on the ground nearby */
+      for(let d=0;d<L;d+=0.44) for(const [off,nl] of [[1.3,5],[1.68,4],[2.06,3],[2.44,2]]){ const sd=Math.round(d*10)+i*977+off*31, lx=ax+ux*d, lz=az+uz*d, o2=off+(rnd(sd+3)-0.5)*0.12, bx=cx+lx+fx*o2, bz=cz+lz+fz*o2;   /* a heaped sandbag wall rising from the front revetment: every bag rests on the ground or on the bag below */
+        let base=1e9; for(const [ox,oz] of [[0,0],[0.3,0],[-0.3,0],[0,0.18],[0,-0.18]]) base=Math.min(base,DIO.y(bx+ux*ox+fx*oz,bz+uz*ox+fz*oz));
+        const lose=WR?Math.floor(rnd(sd+51)*rnd(sd+52)*4.2+0.35*vnoise(lx*0.3,lz*0.3)*3):0, top=Math.max(1,nl-lose);
+        for(let k=0;k<top;k++){ const sh=((k%2)-0.5)*0.22+(rnd(sd+k*7)-0.5)*0.08, x=bx+ux*sh, z=bz+uz*sh; bags.push([x*S,base+(0.1+k*0.205)*S,z*S,ry,0,k]); }
+        if(WR&&top<nl&&rnd(sd+9)<0.7){ const into=rnd(sd+11)<0.55, r2=into?-(off+0.2+rnd(sd+7)*0.6):0.4+rnd(sd+7)*0.8, x=cx+lx+fx*(into?off+r2+off*0:off+r2)+ux*(rnd(sd+13)-0.5)*0.4, z=cz+lz+fz*(into?off+r2:off+r2)+uz*(rnd(sd+14)-0.5)*0.4; bags.push([x*S,DIO.y(x,z)+0.09*S,z*S,ry+(rnd(sd+15)-0.5)*1.4,0,9]); } }   /* a wrecked wall loses its top bags; they slump into the trench or roll off the front */
       for(let d=0;d<L;d+=1.8) for(const sd of [-1,1]){ const x=cx+ax+ux*d+nx*1.2*sd, z=cz+az+uz*d+nz*1.2*sd; posts.push([x,z,ry,cx+ax+ux*d,cz+az+uz*d]); }
       for(let d=0.9;d<L;d+=1.8) for(const sd of [-1,1]){ const x=cx+ax+ux*d+nx*1.24*sd, z=cz+az+uz*d+nz*1.24*sd; boards.push([x,z,Math.atan2(ux,uz),cx+ax+ux*d,cz+az+uz*d]); }
       for(let d=0;d<L;d+=0.15){ const x=cx+ax+ux*d, z=cz+az+uz*d; duck.push([x,z,Math.atan2(ux,uz)]); } }
@@ -2166,14 +2181,14 @@ function buildDiorama(cx,cz,dir,opt){ clearDiorama(); const G=new THREE.Group();
       const kind=k%4, obj=kind===0?propStump(seed+k):kind===1?propTimber(seed+k):kind===2?propIron(seed+k):propTimber(seed+k+1); obj.scale.setScalar(S);
       const x=cx+dx, z=cz+dz; obj.position.set(x*S,DIO.y(x,z)-0.05*S,z*S); obj.rotation.y=rnd(seed+k+500)*6.28; shadowAll(obj,true,true); G.add(obj); } }
   return G; }
-function groundMat(){ if(DIO.mat) return DIO.mat; const m=new THREE.MeshStandardMaterial({map:TEX.mud,roughnessMap:TEX.mudR,roughness:1,metalness:0,envMapIntensity:0.6}); m.polygonOffset=true; m.polygonOffsetFactor=-1; m.polygonOffsetUnits=-2;
+function groundMat(){ if(DIO.mat) return DIO.mat; const m=new THREE.MeshStandardMaterial({map:TEX.mud,roughnessMap:TEX.mudR,roughness:1,metalness:0,envMapIntensity:0.3}); m.polygonOffset=true; m.polygonOffsetFactor=-1; m.polygonOffsetUnits=-2;
   if(!LOW_TEX){ m.normalMap=TEX.mudN; m.normalScale.set(0.55,0.55); }
   m.onBeforeCompile=sh=>{ sh.uniforms.chalkMap={value:TEX.chalk}; sh.uniforms.detail={value:TEX.detail};
     sh.vertexShader=sh.vertexShader.replace('void main() {','attribute vec3 aMix; attribute float aAO; varying vec3 vMix; varying float vAO;\nvoid main() {').replace('#include <begin_vertex>','#include <begin_vertex>\n vMix=aMix; vAO=aAO;');
     sh.fragmentShader=sh.fragmentShader.replace('void main() {','varying vec3 vMix; varying float vAO; uniform sampler2D chalkMap; uniform sampler2D detail;\nvoid main() {')
      .replace('#include <map_fragment>',`if(length(vUv*3.2)>41.4) discard; vec4 texelColor=0.6*texture2D(map,vUv)+0.4*texture2D(map,vec2(vUv.y,-vUv.x)*0.41+0.3); texelColor.rgb*=0.75+0.5*texture2D(detail,vUv*0.25).r; vec3 chc=texture2D(chalkMap,vUv*1.7).rgb; vec3 col=mix(texelColor.rgb,chc,vMix.x);
-       float pud=smoothstep(0.58,0.62,texture2D(detail,vUv*0.11+0.13).r*0.6+vMix.z*0.55)*(1.0-vMix.y); col*=0.72; col*=mix(1.0,0.55,vMix.z); col=mix(col,vec3(0.5,0.51,0.52),vMix.y*0.7); col=mix(col,col*0.35+vec3(0.03,0.028,0.022),pud); diffuseColor.rgb*=col*vAO;`)
-     .replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\n roughnessFactor=mix(roughnessFactor*0.72,0.18,max(vMix.z,vMix.y*0.6)*0.9); { float pud=smoothstep(0.58,0.62,texture2D(detail,vUv*0.11+0.13).r*0.6+vMix.z*0.55)*(1.0-vMix.y); roughnessFactor=mix(roughnessFactor*0.75,0.04,pud); }'); };
+       float pud=smoothstep(0.58,0.62,texture2D(detail,vUv*0.11+0.13).r*0.6+vMix.z*0.55)*(1.0-vMix.y); col*=0.72; col*=mix(1.0,0.55,vMix.z); col=mix(col,vec3(0.34,0.33,0.31),vMix.y*0.55); col=mix(col,col*0.35+vec3(0.03,0.028,0.022),pud); diffuseColor.rgb*=col*vAO;`)
+     .replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\n roughnessFactor=mix(roughnessFactor,0.3,vMix.z*0.8); { float pud=smoothstep(0.58,0.62,texture2D(detail,vUv*0.11+0.13).r*0.6+vMix.z*0.55)*(1.0-vMix.y); roughnessFactor=mix(roughnessFactor*0.75,0.04,pud); }'); };
   return DIO.mat=m; }
 function waterMat(){ if(DIO.wmat) return DIO.wmat; const m=new THREE.MeshStandardMaterial({color:0x26231c,roughness:0.12,metalness:0.0,transparent:true,opacity:0.95,envMapIntensity:0.55});
   if(!LOW_TEX){ m.normalMap=TEX.waterN; m.normalScale.set(0.25,0.25); } return DIO.wmat=m; }
@@ -2414,6 +2429,7 @@ function renderPeople(){ const card1=m=>`<div class="pc"><b>${m.rank} ${m.name}<
 let shotScene=null;
 function setShotScene(id){ const want=(id==='fp'||id==='fb')?id:null; if(want===shotScene) return;
   if(shotScene==='fp'){ FP.rib.visible=true; FP.bags.visible=true; FP.ents.forEach(e=>e.m.visible=true); FP.sentries.forEach(q=>{ q.y0=q.yOrig; q.f.position.x=q.x*S; q.f.position.z=q.z*S; if(q.alive) q.f.position.y=q.y0; }); }
+  if(shotScene==='fb'){ FB.parts.forEach(q=>q.visible=true); FB.crew.forEach(c=>{ if(c.p0) c.f.position.copy(c.p0); }); }
   if(shotScene){ if(CS.ok) CS.exit(); clearDiorama(); startFollowOv(false); }
   shotScene=want; if(!want) return;
   startFollowOv(true);
@@ -2424,11 +2440,27 @@ function setShotScene(id){ const want=(id==='fp'||id==='fb')?id:null; if(want===
     FP.ents.forEach(e=>DIO.place(sc(propDugout()),-1.25,-e.u,0));
     FP.sentries.forEach(q=>{ if(q.yOrig===undefined) q.yOrig=q.y0; q.y0=DIO.y(q.x+dir[0]*0.3,q.z+dir[1]*0.3)+0.5*S; q.f.position.x=(q.x+dir[0]*0.3)*S; q.f.position.z=(q.z+dir[1]*0.3)*S; if(q.alive) q.f.position.y=q.y0; q.f.rotation.y=Math.atan2(dir[0],dir[1]); poseHuman(q.f,'aim',0); }); }
   else { const b=FB.b; buildDiorama(b.x,b.z,[1,0],{craters:34,flatW:b.pieces.map(p=>[0,p.oz,6]),snow:true});
-    FB.crew.forEach(c=>{ c.f.rotation.y=-Math.PI/2+(hash(c.pi,c.f.id)-0.5); c.pose=['crouch','kneel','crouch','kneel'][FB.crew.indexOf(c)%4]; if(c.alive) poseHuman(c.f,c.pose,0); }); }
+    FB.parts.forEach(q=>q.visible=false);
+    // the gun pits rebuilt on the close-up ground: an uneven ring of sandbags, settled and partly knocked down, lined inside with wet timber
+    const L=[], posts=[], planks=[];
+    b.pieces.forEach((p,pi)=>{ const gx=b.x, gz=b.z+p.oz;
+      for(let i=0;i<40;i++){ const a=i/40*Math.PI*2+(rnd(pi*97+i)-0.5)*0.05; if(Math.cos(a)>0.72) continue; const r=3.6+(rnd(pi*53+i)-0.5)*0.3+0.12*Math.sin(a*3+pi);
+        const x=gx+r*Math.cos(a), z=gz+r*Math.sin(a); let base=1e9; for(const d of [-0.3,0,0.3]) base=Math.min(base,DIO.y(x-Math.sin(a)*d,z+Math.cos(a)*d));
+        const h=4-(rnd(pi*71+i)<0.25?1:0)-(rnd(pi*13+i)<0.12?1:0); for(let k=0;k<h;k++){ const ko=(k%2)*0.04, xx=x+Math.cos(a+ko)*0.01, zz=z+Math.sin(a+ko)*0.01; L.push([xx*S,base+(0.1+k*0.215)*S,zz*S,-a+Math.PI/2+(k%2?0.08:-0.06)]); }
+        if(h<4&&rnd(pi*29+i)<0.6){ const a2=a+(rnd(i+3)-0.5)*0.3, r2=r+0.5+rnd(i+5)*1.0, x2=gx+r2*Math.cos(a2), z2=gz+r2*Math.sin(a2); L.push([x2*S,DIO.y(x2,z2)+0.09*S,z2*S,rnd(i+7)*6.28]); } }   // knocked off the top, lying outside
+      for(let i=0;i<22;i++){ const a=i/22*Math.PI*2; if(Math.cos(a)>0.72) continue; const x=gx+3.2*Math.cos(a), z=gz+3.2*Math.sin(a); posts.push([x,z,-a]); for(let k=0;k<4;k++) planks.push([gx+3.22*Math.cos(a+Math.PI/22),gz+3.22*Math.sin(a+Math.PI/22),-a-Math.PI/22,k]); } });
+    bagsMesh(L,null,DIO.group);
+    { const wm=DIO.woodM||(DIO.woodM=new THREE.MeshStandardMaterial({map:TEX.wood,color:0x4a4034,roughness:0.85,envMapIntensity:0.2})), o=new THREE.Object3D();
+      const pg=new THREE.CylinderGeometry(0.06*S,0.07*S,1.1*S,7), im=new THREE.InstancedMesh(pg,wm,posts.length); posts.forEach(([x,z,r],i)=>{ o.position.set(x*S,DIO.y(x,z)+0.5*S,z*S); o.rotation.set((rnd(i+1)-0.5)*0.12,0,(rnd(i+2)-0.5)*0.12); o.updateMatrix(); im.setMatrixAt(i,o.matrix); }); im.castShadow=im.receiveShadow=true; DIO.group.add(im);
+      const kg=new THREE.BoxGeometry(0.04*S,0.2*S,0.92*S), im2=new THREE.InstancedMesh(kg,wm,planks.length); planks.forEach(([x,z,r,k],i)=>{ if(rnd(i+77)<0.08){ o.scale.set(0,0,0); } else o.scale.set(1,1,0.9+0.2*rnd(i)); o.position.set(x*S,DIO.y(x,z)+(0.12+k*0.22)*S,z*S); o.rotation.set((rnd(i+3)-0.5)*0.05,r,(rnd(i+4)-0.5)*0.04); o.updateMatrix(); im2.setMatrixAt(i,o.matrix); }); im2.castShadow=im2.receiveShadow=true; DIO.group.add(im2); }
+    // the crew: each man at his own job, not a copy of the next one
+    const jobs=[['kneel',-0.9,0.4,1.25],['crouch',0.2,-0.6,1.5],['stand',1.6,0.9,-1.2],['walk',2.3,-1.1,2.6]];
+    FB.crew.forEach((c,ci)=>{ const pc=b.pieces[c.pi], j=jobs[(ci+c.pi)%4], gx=b.x+j[1]+(hash(ci,5)-0.5)*0.4, gz=b.z+pc.oz+j[2]*1.4+(hash(ci,6)-0.5)*0.4;
+      c.f.position.set(gx*S,DIO.y(gx,gz),gz*S); c.f.rotation.y=j[3]+(hash(ci,7)-0.5)*0.5; c.pose=j[0]; c.f.userData.phase=hash(ci,8)*6.28; if(c.alive) poseHuman(c.f,c.pose,hash(ci,9)*3); }); }
   cineShot(); }
 function cineShot(){ if(!CS.ok||!shotScene) return; CS.enter(); document.body.classList.add('tour');
   if(shotScene==='fp'){ CS.take([DIO.group,...FP.sentries.map(q=>q.f)]); const q=FP.sentries[2]; CS.focus(q.f,[-FP.nx,-FP.nz],{a:Math.PI-0.45,d:4.5,h:2.6,lookH:1.2,orbit:0.01,dolly:-0.04, fov:44});  }
-  else { const b=FB.b; CS.take([DIO.group,b.group,...FB.parts,...FB.crew.map(c=>c.f)]); CS.focus(FB.crew[1].f,[-1,0],{a:0.8,d:7.5,h:2.7,lookH:0.6,orbit:0.025,dolly:-0.1,fov:40}); } }
+  else { const b=FB.b; CS.take([DIO.group,b.group,...FB.crew.map(c=>c.f)]); CS.focus(FB.crew[1].f,[-1,0],{a:0.8,d:7.5,h:2.7,lookH:0.6,orbit:0.025,dolly:-0.1,fov:40}); } }
 // ================= cinematic close-ups ("cutscenes"): a second renderer with its own lighting, contact shadows (SSAO), depth of field and film grade =================
 // The map renderer uses a logarithmic depth buffer for its 20 km view; that rules out screen-space shading, so close-ups get their own renderer and scene.
 const CS=(function(){
