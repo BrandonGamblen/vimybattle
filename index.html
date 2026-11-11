@@ -809,7 +809,7 @@ function ringLine(cx,cz,r,color,dashed,op){ const n=Math.min(900,Math.max(120,Ma
   const l=new THREE.LineSegments(g,m); if(dashed) l.computeLineDistances(); l.renderOrder=2; scene.add(l); return l; }
 // guns are drawn only when the camera is within about 3 km of them; further out each battery is its disc and label (the guns would be under a pixel anyway)
 let batLODf=0; const _bv=new THREE.Vector3();
-function updBatLOD(){ if(++batLODf%8) return; for(const b of batteries){ const near=camera.position.distanceTo(_bv.set(b.x*S,meshY(b.x,b.z),b.z*S))<300||selected===b||!!window.__CSON; if(b.lodNear!==near){ b.lodNear=near; b.pieces.forEach(p=>{ if(p.mesh) p.mesh.visible=near; }); } } }
+function updBatLOD(){ if(++batLODf%8) return; for(const b of batteries){ const near=camera.position.distanceTo(_bv.set(b.x*S,meshY(b.x,b.z),b.z*S))<300||selected===b||!!window.__CSON, hideF=shotScene==='fb'&&b===FB.b; if(hideF){ b.pieces.forEach(p=>{ if(p.mesh) p.mesh.visible=false; }); b.lodNear=null; continue; } if(b.lodNear!==near){ b.lodNear=near; b.pieces.forEach(p=>{ if(p.mesh) p.mesh.visible=near; }); } } }
 function addBattery(key,x,z,o){ const b=new Battery(key,x,z,o); batteries.push(b); return b; }
 function removeBattery(b){ b.destroy(); batteries=batteries.filter(o=>o!==b); if(selected===b) select(null); recomputeReach(); }
 
@@ -2167,7 +2167,7 @@ function buildDiorama(cx,cz,dir,opt){ clearDiorama(); const G=new THREE.Group();
     const floorY=(x,z)=>DIO.y(x,z);
     const pg=new THREE.CylinderGeometry(0.07*S,0.08*S,2.1*S,7), bg=new THREE.BoxGeometry(0.05*S,2.0*S,1.85*S), dg=new THREE.BoxGeometry(0.72*S,0.035*S,0.12*S), rg=new THREE.BoxGeometry(0.08*S,0.08*S,0.32*S);
     const inst=(geo,list,fn)=>{ const im=new THREE.InstancedMesh(geo,wood,list.length), o=new THREE.Object3D(); list.forEach((q,i)=>{ fn(o,q,i); o.updateMatrix(); im.setMatrixAt(i,o.matrix); }); im.castShadow=im.receiveShadow=true; G.add(im); };
-    inst(pg,posts,(o,[x,z,ry,qx,qz],i)=>{ const sy=WR?0.4+0.6*rnd(i+9):1; o.position.set(x*S,(WR?DIO.y(x,z):floorY(qx,qz))+1.0*sy*S-(WR?0.15*S:0),z*S); o.rotation.set((rnd(i)-0.5)*(WR?0.9:0.08),0,(rnd(i+5)-0.5)*(WR?0.9:0.08)); o.scale.set(1,sy,1); });
+    inst(pg,posts,(o,[x,z,ry,qx,qz],i)=>{ const sy=WR?0.4+0.6*rnd(i+9):1; o.position.set(x*S,(WR?DIO.y(x,z):floorY(qx,qz))+1.0*sy*S-(WR?0.15*S:0),z*S); o.rotation.set((rnd(i)-0.5)*(WR?0.3:0.08),0,(rnd(i+5)-0.5)*(WR?0.3:0.08)); o.scale.set(1,sy,1); });
     { const pl=new THREE.BoxGeometry(0.035*S,0.2*S,1.82*S), list=[]; boards.forEach((q,i)=>{ for(let k=0;k<9;k++) if(rnd(i*13+k)>(WR?(k>3?0.75:0.45):0.06)) list.push([...q,k,i]); });
       const pm=new THREE.MeshStandardMaterial({map:TEX.wood,normalMap:LOW_TEX?null:TEX.woodN,roughness:0.85,color:0x3a3128,envMapIntensity:0.15});   /* rain-darkened planks */ const im=new THREE.InstancedMesh(pl,pm,list.length), o=new THREE.Object3D(), c=new THREE.Color();
       list.forEach(([x,z,ry,qx,qz,k,i],j)=>{ if(WR&&k>=2){ o.position.set((qx+(rnd(j+3)-0.5)*1.6)*S,floorY(qx,qz)+(0.04+0.05*(k%3))*S,(qz+(rnd(j+4)-0.5)*1.6)*S); o.rotation.set(Math.PI/2*(0.9+0.2*rnd(j+5)),ry+(rnd(j+6)-0.5)*1.4,0); o.scale.set(1,1,0.5+0.5*rnd(j)); o.updateMatrix(); im.setMatrixAt(j,o.matrix); const v=0.35+0.2*rnd(j+11); c.setRGB(v,v*0.9,v*0.8); im.setColorAt(j,c); return; }
@@ -2200,7 +2200,7 @@ function groundMat(){ if(DIO.mat) return DIO.mat; const m=new THREE.MeshStandard
 function waterMat(){ if(DIO.wmat) return DIO.wmat; const m=new THREE.MeshStandardMaterial({color:0x26231c,roughness:0.12,metalness:0.0,transparent:true,opacity:0.95,envMapIntensity:0.55});
   if(!LOW_TEX){ m.normalMap=TEX.waterN; m.normalScale.set(0.25,0.25); } return DIO.wmat=m; }
 function jag(geo,amt,seed){ const P=geo.attributes.position; for(let i=0;i<P.count;i++) if(P.getY(i)>0) P.setY(i,P.getY(i)+(rnd(seed+i)-0.3)*amt); geo.computeVertexNormals(); return geo; }
-function propStump(sd){ const g=new THREE.Group(), h=1+rnd(sd)*3.5, r=0.14+rnd(sd+1)*0.18, bark=hmat(0x4a3c2e);
+function propStump(sd){ const g=new THREE.Group(), h=0.6+rnd(sd)*1.6, r=0.14+rnd(sd+1)*0.18, bark=hmat(0x4a3c2e);
   const t=new THREE.Mesh(jag(new THREE.CylinderGeometry(r*0.8,r,h,9,4),h*0.25,sd),bark); t.position.y=h/2; t.rotation.z=(rnd(sd+2)-0.5)*0.25; g.add(t);
   if(rnd(sd+3)>0.4){ const b=new THREE.Mesh(new THREE.CylinderGeometry(r*0.35,r*0.5,h*0.7,7),bark); b.rotation.z=Math.PI/2-0.15; b.position.set(h*0.4,r*0.4,0.4); g.add(b); } return g; }
 function propTimber(sd){ const g=new THREE.Group(), w=hmat(0x6b5236); for(let i=0;i<1+Math.floor(rnd(sd)*3);i++){ const L=1.2+rnd(sd+i)*2.5, m=new THREE.Mesh(new THREE.BoxGeometry(L,0.12,0.22),w); m.position.set((rnd(sd+i+7)-0.5),0.06+i*0.1,(rnd(sd+i+9)-0.5)); m.rotation.set(0,rnd(sd+i+11)*3,(rnd(sd+i+13)-0.5)*0.3); g.add(m); } return g; }
@@ -2259,7 +2259,7 @@ function propDugout(){ const g=new THREE.Group(); bx(1.4,1.7,0.12,0x5a4630,0,0.8
 function propBoxes(){ const g=new THREE.Group(); for(let i=0;i<5;i++) bx(0.5,0.3,0.32,0x5b4a30,(i%3)*0.55-0.5,0.15+Math.floor(i/3)*0.3,0,g); return g; }
 // 7.7 cm FK 96 n.A. built to its main dimensions (metres): L/27 barrel (2.08 m), 12-spoke wheels of about 1.36 m, shield with axle seats, box trail with spade.
 // Origin on the ground under the axle; the muzzle points along -x. Mud is painted onto the lower parts by height.
-function propFK96(seed){ const g=new THREE.Group(), paint=new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:0.82,metalness:0.15,map:TEX.detail,envMapIntensity:0.25}), steel=new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:0.6,metalness:0.5,envMapIntensity:0.3});
+function propFK96(seed){ const g=new THREE.Group(), paint=new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:0.85,metalness:0.1,envMapIntensity:0.2}), steel=new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:0.6,metalness:0.5,envMapIntensity:0.3});
   const add=(geo,m,x,y,z,rx,ry,rz)=>{ const o=new THREE.Mesh(geo,m||paint); o.position.set(x,y,z); o.rotation.set(rx||0,ry||0,rz||0); o.castShadow=o.receiveShadow=true; g.add(o); return o; };
   const R0=0.68, tw=0.765;
   for(const sz of [-1,1]){ const w=new THREE.Group(); w.position.set(0,R0,sz*tw); g.add(w);
@@ -2268,15 +2268,17 @@ function propFK96(seed){ const g=new THREE.Group(), paint=new THREE.MeshStandard
     const hub=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.12,0.26,12),paint); hub.rotation.x=Math.PI/2; w.add(hub); const cap=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.34,8),steel); cap.rotation.x=Math.PI/2; w.add(cap);
     w.rotation.z=(hash(seed,sz+3)-0.5)*0.6; w.traverse(o=>{ o.castShadow=o.receiveShadow=true; }); }
   add(new THREE.CylinderGeometry(0.045,0.045,1.62,10),steel,0,R0,0,Math.PI/2);                    // axle
-  const sh=add(new THREE.BoxGeometry(0.012,1.02,1.5),paint,-0.2,1.1,0,0,0,-0.12);                       // shield
-  add(new THREE.BoxGeometry(0.012,0.34,1.12),paint,-0.2,0.48,0,0,0,0.05);                                // lower apron between the wheels
-  add(new THREE.BoxGeometry(0.012,0.22,1.5),paint,-0.29,1.68,0,0,0,-0.45);                               // folding top plate
-  for(const sz of [-1,1]){ add(new THREE.BoxGeometry(0.3,0.05,0.32),paint,-0.42,0.84,sz*0.42); add(new THREE.BoxGeometry(0.05,0.3,0.3),paint,-0.28,0.98,sz*0.42); }   // axle-tree seats
+  // shield: one flat plate, sloped back a little, with a notch in the top edge for the sight; hinged apron below the axle
+  for(const sz of [-1,1]){ add(new THREE.BoxGeometry(0.01,1.02,0.66),paint,-0.2,1.12,sz*0.42,0,0,-0.1); add(new THREE.BoxGeometry(0.01,0.12,0.66),paint,-0.2,1.66,sz*0.42+sz*0.0,0,0,-0.1).scale.z=0.75; }
+  add(new THREE.BoxGeometry(0.01,0.3,0.2),paint,-0.21,0.74,0,0,0,-0.1); add(new THREE.BoxGeometry(0.01,0.36,0.2),paint,-0.24,1.33,0,0,0,-0.1);   // centre strips above and below the barrel opening; the sight notch is left open at the top
+  add(new THREE.BoxGeometry(0.01,0.3,1.1),paint,-0.2,0.47,0,0,0,0.04);                                    // lower apron between the wheels
+  for(const sz of [-1,1]){ add(new THREE.BoxGeometry(0.26,0.03,0.28),steel,-0.36,0.78,sz*0.45); add(new THREE.BoxGeometry(0.03,0.2,0.26),steel,-0.25,0.9,sz*0.45,0,0,-0.15); add(new THREE.CylinderGeometry(0.012,0.012,0.12,5),steel,-0.36,0.71,sz*0.45); }   // axle-tree seats in front of the shield
   const cr=new THREE.Group(); cr.position.set(0.05,0.98,0); cr.rotation.z=0.06; g.add(cr);           // elevating mass: cradle, recoil cylinder, barrel, breech
   const bar=new THREE.Mesh(new THREE.CylinderGeometry(0.052,0.068,2.08,16),steel); bar.rotation.z=Math.PI/2; bar.position.x=-0.5; cr.add(bar);
   const mz=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.056,0.08,16),steel); mz.rotation.z=Math.PI/2; mz.position.x=-1.52; cr.add(mz);
-  const rc=new THREE.Mesh(new THREE.CylinderGeometry(0.075,0.075,1.35,12),paint); rc.rotation.z=Math.PI/2; rc.position.set(-0.25,-0.14,0); cr.add(rc);
-  const cra=new THREE.Mesh(new THREE.BoxGeometry(1.1,0.12,0.2),paint); cra.position.set(0.05,-0.1,0); cr.add(cra);
+  const rc=new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.08,1.82,14),paint); rc.rotation.z=Math.PI/2; rc.position.set(-0.36,-0.13,0); cr.add(rc);   // the cradle and recoil cylinder run almost the full length of the barrel
+  const cra=new THREE.Mesh(new THREE.BoxGeometry(1.8,0.07,0.17),paint); cra.position.set(-0.36,-0.06,0); cr.add(cra);
+  for(const x of [-1.2,-0.5,0.2]){ const bd=new THREE.Mesh(new THREE.TorusGeometry(0.085,0.012,5,14),steel); bd.rotation.y=Math.PI/2; bd.position.set(x,-0.13,0); cr.add(bd); }
   const br=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.2,0.2),steel); br.position.set(0.66,0,0); cr.add(br);
   const sg=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.025,0.32,8),steel); sg.rotation.z=Math.PI/2; sg.position.set(0.3,0.2,0.16); cr.add(sg);   // sight, left side
   const hw=new THREE.Mesh(new THREE.TorusGeometry(0.11,0.012,5,16),steel); hw.position.set(0.45,-0.2,0.24); cr.add(hw);
@@ -2290,7 +2292,7 @@ function propFK96(seed){ const g=new THREE.Group(), paint=new THREE.MeshStandard
   g.updateMatrixWorld(true); const v=new THREE.Vector3();
   g.traverse(o=>{ if(!o.isMesh) return; const P=o.geometry.attributes.position, C=new Float32Array(P.count*3), st=o.material===steel;
     for(let i=0;i<P.count;i++){ v.fromBufferAttribute(P,i).applyMatrix4(o.matrixWorld); const n=vnoise(v.x*7+seed,v.z*7+v.y*5), mud=Math.min(1,Math.max(0,(0.55-v.y)/0.45)+(n>0.62?0.6:0)*Math.max(0,1.2-v.y));
-      const base=st?[0.3,0.31,0.29]:[0.36,0.38,0.32]; for(let k=0;k<3;k++) C[i*3+k]=base[k]*(1-mud)+[0.15,0.12,0.09][k]*mud*(0.8+0.4*n); }
+      const base=st?[0.16,0.165,0.155]:[0.19,0.2,0.17]; for(let k=0;k<3;k++) C[i*3+k]=base[k]*(1-mud)+[0.15,0.12,0.09][k]*mud*(0.8+0.4*n); }
     o.geometry.setAttribute('color',new THREE.BufferAttribute(C,3)); });
   return g; }
 function propGun60(){ const g=makePiece(TYPES.a60,'A'); g.scale.setScalar(1/S); return g; }
@@ -2512,7 +2514,7 @@ function setShotScene(id){ const want=(id==='fp'||id==='fb')?id:null; if(want===
       c.f.position.set(gx*S,DIO.y(gx,gz),gz*S); c.f.rotation.y=j[3]+(hash(ci,7)-0.5)*0.5; c.pose=j[0]; c.f.userData.phase=hash(ci,8)*6.28; if(c.alive) poseHuman(c.f,c.pose,hash(ci,9)*3); }); }
   cineShot(); }
 function cineShot(){ if(!CS.ok||!shotScene) return; CS.enter(); document.body.classList.add('tour');
-  if(shotScene==='fp'){ CS.take([DIO.group,...FP.sentries.map(q=>q.f)]); const q=FP.sentries[2]; CS.focus(q.f,[-FP.nx,-FP.nz],{a:Math.PI-0.5,d:4.4,h:2.0,lookH:1.0,orbit:0.01,dolly:-0.04, fov:44});  }
+  if(shotScene==='fp'){ CS.take([DIO.group,...FP.sentries.map(q=>q.f)]); const q=FP.sentries[2]; CS.focus(q.f,[-FP.nx,-FP.nz],{a:Math.PI+1.3,d:5.5,h:1.75,lookH:0.9,orbit:0.01,dolly:-0.04, fov:44});  }
   else { const b=FB.b; CS.take([DIO.group,b.group,...FB.crew.map(c=>c.f)]); CS.focus(FB.crew[1].f,[-1,0],{a:0.8,d:7.2,h:2.1,lookH:0.6,orbit:0.025,dolly:-0.1,fov:40}); } }
 // ================= cinematic close-ups ("cutscenes"): a second renderer with its own lighting, contact shadows (SSAO), depth of field and film grade =================
 // The map renderer uses a logarithmic depth buffer for its 20 km view; that rules out screen-space shading, so close-ups get their own renderer and scene.
@@ -2569,7 +2571,7 @@ const CS=(function(){
       float l=dot(col,vec3(0.299,0.587,0.114)); col=mix(vec3(l),col,0.82); col=mix(col*vec3(0.92,0.98,1.06),col*vec3(1.05,1.0,0.93),smoothstep(0.2,0.7,l));
       col=pow(max(col,0.0),vec3(1.12)); col=aces(col*1.0)*1.06; vec2 q=vUv-0.5; col*=1.0-0.55*dot(q*vec2(1.0,0.75),q*vec2(1.0,0.75))*1.8;
       col+= (h12(vUv*res+time*61.0)-0.5)*0.045;
-      if(mono>0.5){ float o=dot(col,vec3(0.2,0.55,0.25)); o=1.0-exp(-o*3.4);   // orthochromatic plate: blind to red, strong in blue-green
+      if(mono>0.5){ float o=dot(col,vec3(0.32,0.43,0.25)); o=1.0-exp(-o*2.6);   // orthochromatic plate: blind to red, strong in blue-green
         o=smoothstep(0.0,1.0,o)*0.55+o*0.45; o=mix(o,0.5,0.05);   // contact-print contrast, lifted blacks
         float g=(h12(floor(vUv*res/1.6)+fract(time)*97.0)-0.5); o+=g*0.085*(1.0-abs(o-0.5));   // silver grain, strongest in the mid-tones
         o*=1.0-0.35*dot(q,q)*2.2; col=vec3(o)*vec3(1.02,1.0,0.96); }
