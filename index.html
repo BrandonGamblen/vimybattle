@@ -2512,8 +2512,8 @@ function setShotScene(id){ const want=(id==='fp'||id==='fb')?id:null; if(want===
       c.f.position.set(gx*S,DIO.y(gx,gz),gz*S); c.f.rotation.y=j[3]+(hash(ci,7)-0.5)*0.5; c.pose=j[0]; c.f.userData.phase=hash(ci,8)*6.28; if(c.alive) poseHuman(c.f,c.pose,hash(ci,9)*3); }); }
   cineShot(); }
 function cineShot(){ if(!CS.ok||!shotScene) return; CS.enter(); document.body.classList.add('tour');
-  if(shotScene==='fp'){ CS.take([DIO.group,...FP.sentries.map(q=>q.f)]); const q=FP.sentries[2]; CS.focus(q.f,[-FP.nx,-FP.nz],{a:Math.PI-0.45,d:4.5,h:2.6,lookH:1.2,orbit:0.01,dolly:-0.04, fov:44});  }
-  else { const b=FB.b; CS.take([DIO.group,b.group,...FB.crew.map(c=>c.f)]); CS.focus(FB.crew[1].f,[-1,0],{a:0.8,d:7.5,h:2.7,lookH:0.6,orbit:0.025,dolly:-0.1,fov:40}); } }
+  if(shotScene==='fp'){ CS.take([DIO.group,...FP.sentries.map(q=>q.f)]); const q=FP.sentries[2]; CS.focus(q.f,[-FP.nx,-FP.nz],{a:Math.PI-0.5,d:4.4,h:2.0,lookH:1.0,orbit:0.01,dolly:-0.04, fov:44});  }
+  else { const b=FB.b; CS.take([DIO.group,b.group,...FB.crew.map(c=>c.f)]); CS.focus(FB.crew[1].f,[-1,0],{a:0.8,d:7.2,h:2.1,lookH:0.6,orbit:0.025,dolly:-0.1,fov:40}); } }
 // ================= cinematic close-ups ("cutscenes"): a second renderer with its own lighting, contact shadows (SSAO), depth of field and film grade =================
 // The map renderer uses a logarithmic depth buffer for its 20 km view; that rules out screen-space shading, so close-ups get their own renderer and scene.
 const CS=(function(){
@@ -2554,8 +2554,8 @@ const CS=(function(){
       for(int i=0;i<16;i++){ vec3 s=p+tbn*kern[i]*rad; vec4 o=proj*vec4(s,1.0); o.xy=o.xy/o.w*0.5+0.5; if(o.x<0.0||o.x>1.0||o.y<0.0||o.y>1.0) continue;
         float sz=vpos(o.xy).z; float rc=smoothstep(0.0,1.0,rad/abs(p.z-sz)); occ+=(sz>=s.z+0.002*rad*20.0?1.0:0.0)*rc; }
       float ao=1.0-occ/16.0; gl_FragColor=vec4(vec3(pow(ao,1.6)),1.0); }`});
-  const outMat=new THREE.ShaderMaterial({uniforms:{tCol:{value:rtC.texture},tAO:{value:rtA.texture},tDepth:{value:rtC.depthTexture},invProj:{value:new THREE.Matrix4()},res:{value:new THREE.Vector2()},focus:{value:3},aperture:{value:1},time:{value:0},aoOn:{value:1},dofOn:{value:1}},vertexShader:VS,
-    fragmentShader:`varying vec2 vUv; ${DEPTH} uniform sampler2D tCol,tAO; uniform vec2 res; uniform float focus,aperture,time,aoOn,dofOn;
+  const outMat=new THREE.ShaderMaterial({uniforms:{tCol:{value:rtC.texture},tAO:{value:rtA.texture},tDepth:{value:rtC.depthTexture},invProj:{value:new THREE.Matrix4()},res:{value:new THREE.Vector2()},focus:{value:3},mono:{value:0},aperture:{value:1},time:{value:0},aoOn:{value:1},dofOn:{value:1}},vertexShader:VS,
+    fragmentShader:`varying vec2 vUv; ${DEPTH} uniform sampler2D tCol,tAO; uniform vec2 res; uniform float focus,aperture,time,aoOn,dofOn,mono;
     float h12(vec2 p){ return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453); }
     float aoAt(vec2 uv,float zc){ float s=0.0,w=0.0; for(int j=-2;j<=2;j++) for(int i=-2;i<=2;i++){ vec2 o=vec2(float(i),float(j))*1.5/res; float zz=vpos(uv+o).z; float k=exp(-abs(zz-zc)*40.0); s+=texture2D(tAO,uv+o).r*k; w+=k; } return s/max(w,1e-4); }
     vec3 aces(vec3 x){ return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14),0.0,1.0); }
@@ -2568,7 +2568,12 @@ const CS=(function(){
       // grade: slight desaturation, cool shadows / warm highlights, filmic curve, vignette, grain
       float l=dot(col,vec3(0.299,0.587,0.114)); col=mix(vec3(l),col,0.82); col=mix(col*vec3(0.92,0.98,1.06),col*vec3(1.05,1.0,0.93),smoothstep(0.2,0.7,l));
       col=pow(max(col,0.0),vec3(1.12)); col=aces(col*1.0)*1.06; vec2 q=vUv-0.5; col*=1.0-0.55*dot(q*vec2(1.0,0.75),q*vec2(1.0,0.75))*1.8;
-      col+= (h12(vUv*res+time*61.0)-0.5)*0.045; gl_FragColor=vec4(col,1.0); }`});
+      col+= (h12(vUv*res+time*61.0)-0.5)*0.045;
+      if(mono>0.5){ float o=dot(col,vec3(0.2,0.55,0.25)); o=1.0-exp(-o*3.4);   // orthochromatic plate: blind to red, strong in blue-green
+        o=smoothstep(0.0,1.0,o)*0.55+o*0.45; o=mix(o,0.5,0.05);   // contact-print contrast, lifted blacks
+        float g=(h12(floor(vUv*res/1.6)+fract(time)*97.0)-0.5); o+=g*0.085*(1.0-abs(o-0.5));   // silver grain, strongest in the mid-tones
+        o*=1.0-0.35*dot(q,q)*2.2; col=vec3(o)*vec3(1.02,1.0,0.96); }
+      gl_FragColor=vec4(col,1.0); }`});
   function resize(){ const pr=R.getPixelRatio(); W=Math.max(2,Math.floor(innerWidth*pr)); H=Math.max(2,Math.floor(innerHeight*pr)); R.setSize(innerWidth,innerHeight,false);
     rtC.setSize(W,H); rtA.setSize(Math.ceil(W/2),Math.ceil(H/2)); cam.aspect=innerWidth/innerHeight; cam.updateProjectionMatrix(); }
   addEventListener('resize',()=>{ if(C.on) resize(); });
@@ -2578,7 +2583,7 @@ const CS=(function(){
   const bursts=[]; let nextBurst=1;
   const snowG=new THREE.BufferGeometry(), SN=1500, snP=new Float32Array(SN*3), snB=new Float32Array(SN*3); for(let i=0;i<SN*3;i++) snB[i]=Math.random(); snowG.setAttribute('position',new THREE.BufferAttribute(snP,3));
   const slG=new THREE.BufferGeometry(), slP=new Float32Array(SN*6); slG.setAttribute('position',new THREE.BufferAttribute(slP,3));
-  const snow=new THREE.LineSegments(slG,new THREE.LineBasicMaterial({color:0xcfd5da,transparent:true,opacity:0.42,depthWrite:false})); snow.frustumCulled=false; sc.add(snow);   /* sleet: wet snow and rain driven on a west wind, drawn as short streaks */
+  const snow=new THREE.LineSegments(slG,new THREE.LineBasicMaterial({color:0xcfd5da,transparent:true,opacity:0.42,depthWrite:false})); snow.frustumCulled=false; C.snowMat=snow.material; sc.add(snow);   /* sleet: wet snow and rain driven on a west wind, drawn as short streaks */
   // ---- camera direction
   C.shot={a:0.6,d:3.0,h:1.45,lookH:1.35,orbit:0.03,dolly:-0.12,fov:34,focus:'hero'};
   C.taken=[]; function take(list){ for(const o of list) if(o){ sc.add(o); if(!C.taken.includes(o)) C.taken.push(o); } }
@@ -2625,7 +2630,7 @@ const CS=(function(){
     R.setRenderTarget(rtC); R.render(sc,cam);
     aoMat.uniforms.invProj.value.copy(inv); aoMat.uniforms.proj.value.copy(cam.projectionMatrix); aoMat.uniforms.res.value.set(rtA.width,rtA.height); aoMat.uniforms.radius.value=0.045;
     if(!LOW){ quad.material=aoMat; R.setRenderTarget(rtA); R.render(qs,quadCam); }
-    const u=outMat.uniforms; u.invProj.value.copy(inv); u.res.value.set(W,H); u.focus.value=fd; u.aperture.value=0.9; u.time.value=C.t; u.aoOn.value=LOW?0:1; u.dofOn.value=LOW?0:1;
+    const u=outMat.uniforms; u.invProj.value.copy(inv); u.res.value.set(W,H); u.focus.value=fd; u.aperture.value=shotScene?0.12:0.9; u.mono.value=shotScene?1:0; if(C.snowMat) C.snowMat.opacity=shotScene?0.1:0.42; u.time.value=C.t; u.aoOn.value=LOW?0:1; u.dofOn.value=LOW?0:1;
     quad.material=outMat; R.setRenderTarget(null); R.render(qs,quadCam); }
   // point the camera at an object or a ground point (tour close-ups and freeze-frames)
   function focus(obj,dir,cam_){ setStep({cam:cam_||{}},obj,dir); }
