@@ -26,6 +26,7 @@ button,select{font:inherit;color:var(--ink);background:#33352d;border:1px solid 
 button:hover{background:#43453a}button.on{background:#5b4a2a;border-color:#a8854a}
 .row{display:flex;align-items:center;gap:8px;margin:5px 0}.row label{flex:1}
 input[type=range]{flex:1;accent-color:#c49a52}
+@media (prefers-reduced-motion: reduce){ *{animation:none!important} }
 @keyframes amberPulse{0%,100%{box-shadow:0 0 4px 1px rgba(196,154,82,.45),inset 0 0 3px rgba(196,154,82,.25)}50%{box-shadow:0 0 16px 5px rgba(232,180,90,.85),inset 0 0 6px rgba(232,180,90,.4)}}
 #introGo:not([disabled]){border-color:#e0b25e;color:#fff4dc;animation:amberPulse 1.8s ease-in-out infinite}
 #play{border-color:#c49a52;box-shadow:0 0 6px 1px rgba(196,154,82,.55)}
@@ -142,12 +143,12 @@ body.cine.tour #phase{display:block!important;top:8vh;bottom:auto;left:22vw;righ
   <div class="small legend" style="margin-top:6px">
     <span style="background:rgb(70,100,170)"></span>Allied-held <span style="background:rgb(165,50,55);margin-left:6px"></span>German-held<br>
     <span style="background:#111"></span>Black <span style="background:#d23a2a"></span>Red <span style="background:#2f6fe0"></span>Blue <span style="background:#8a5a2b"></span>Brown objective lines<br>
-    <span style="background:#ffb347"></span>Creeping barrage (band off by default) <br>The RCR (battalion shown section by section), by section: <span style="background:#ffcf3f"></span>bombers <span style="background:#c08cff"></span>Lewis gun <span style="background:#7fb6ff"></span>riflemen <span style="background:#66e08a"></span>rifle-grenadiers <span style="background:#ffffff"></span>moppers-up<br><span style="background:#9fc3ff"></span>Canadian infantry<br>
+    <span style="background:#ffb347"></span>Creeping barrage (band off by default) <br>The RCR (battalion shown section by section), by section: <span style="background:#ffcf3f"></span>bombers <span style="background:#ff4fd8"></span>Lewis gun <span style="background:#2ee6ff"></span>riflemen <span style="background:#66e08a"></span>rifle-grenadiers <span style="background:#ffffff"></span>moppers-up<br><span style="background:#9fc3ff"></span>Canadian infantry<br>
     Grid: 1 km squares; 100 m squares when zoomed in. The scale bar (just above the time bar, on the right) shows which. Lowest camera height: 20 m.
   </div>
 
   <h2>Fire control</h2>
-  <div class="row"><label>Observation</label><input type="range" id="obs" min="0" max="100" value="60"><span class="mono" id="obsv">0.60</span></div>
+  <div class="row"><label for="obs">Observation</label><input type="range" id="obs" min="0" max="100" value="60"><span class="mono" id="obsv">0.60</span></div>
   <div class="small">Scales shell dispersion: 0 = unobserved map fire, 1 = well-observed, adjusted fire. Hit % falls as range grows.</div>
 
   <h2>Add battery</h2>
@@ -204,20 +205,20 @@ body.cine.tour #phase{display:block!important;top:8vh;bottom:auto;left:22vw;righ
 </div>
 
 <div id="scaleBar"><div id="sbBar"></div><div id="sbTxt"></div></div>
-<div id="card"><button id="cardCont" style="background:#5b4a2a;border-color:#a8854a">▶ Continue</button><div id="cardBody"></div></div>
+<div id="card" aria-live="polite"><button id="cardCont" style="background:#5b4a2a;border-color:#a8854a">▶ Continue</button><div id="cardBody"></div></div>
 <div id="phase">
   <div class="row keep" style="margin:0">
-    <select id="phSel" class="t" style="font-family:'IM Fell English SC',serif;font-size:16px;background:transparent;color:inherit;border:1px solid var(--line);border-radius:4px"><option value="-1">The preparation · 20 March – 8 April</option><option value="0">The night of 8–9 April</option><option value="1">Phase 1 · Zero hour → Black Line</option><option value="2">Phase 2 · Black Line → Red Line</option><option value="3">Phase 3 · Blue and Brown Lines</option><option value="4">Phase 4 · Hill 145 and the Pimple</option><option value="5">13–14 April · onto the Douai Plain</option></select>
+    <select id="phSel" aria-label="Phase of the battle" class="t" style="font-family:'IM Fell English SC',serif;font-size:16px;background:transparent;color:inherit;border:1px solid var(--line);border-radius:4px"><option value="-1">The preparation · 20 March – 8 April</option><option value="0">The night of 8–9 April</option><option value="1">Phase 1 · Zero hour → Black Line</option><option value="2">Phase 2 · Black Line → Red Line</option><option value="3">Phase 3 · Blue and Brown Lines</option><option value="4">Phase 4 · Hill 145 and the Pimple</option><option value="5">13–14 April · onto the Douai Plain</option></select>
     <span style="flex:1"></span>
     <span id="clock">05:25:00</span>
   </div>
   <div class="row keep">
     <button id="play">▶ Play</button>
-    <input type="range" id="tl" min="0" max="1000" value="0" step="1">
-    <label style="flex:0 0 auto;font-size:12px;display:flex;gap:4px;align-items:center" title="The camera follows the action while playing"><input type="checkbox" id="tourB" checked>Guided camera</label><button id="ivaB" style="flex:0 0 auto">Intended vs actual</button><button id="folB" style="flex:0 0 auto;background:#3d5a8a">Follow a man</button><button id="helpB" style="flex:0 0 auto" title="How to use this map">?</button><select id="spd"><option value="1">1× real time</option><option value="5">5×</option><option value="15" selected>15×</option><option value="30">30×</option><option value="60">60×</option></select>
+    <input type="range" id="tl" min="0" max="1000" value="0" step="1" aria-label="Time within this phase">
+    <label style="flex:0 0 auto;font-size:12px;display:flex;gap:4px;align-items:center" title="The camera follows the action while playing"><input type="checkbox" id="tourB" checked>Guided camera</label><button id="ivaB" style="flex:0 0 auto">Intended vs actual</button><button id="folB" style="flex:0 0 auto;background:#3d5a8a">Follow a man</button><button id="helpB" style="flex:0 0 auto" title="How to use this map">?</button><select id="spd" aria-label="Playback speed"><option value="1">1× real time</option><option value="5">5×</option><option value="15" selected>15×</option><option value="30">30×</option><option value="60">60×</option></select>
   </div>
   <div class="row keep" style="margin:4px 0 2px"><button id="prevB" title="Previous part (←)">◀ Prev</button><div id="ticks"></div><button id="nextB" title="Next part (→)">Next ▶</button><label class="small" style="margin-left:8px;white-space:nowrap" title="When a phase ends, Play carries on into the next one"><input type="checkbox" id="cont" checked> Run on</label></div>
-  <div id="evt"></div>
+  <div id="evt" aria-live="polite"></div>
   <details><summary id="evsum">All Phase 1 events</summary><div id="evlist" class="small"></div></details>
 </div>
 
@@ -463,7 +464,7 @@ function kindMat(kind,color,own){ const key=kind+':'+color; if(!own&&KMC[key]) r
   if(k.n&&!LOW_TEX){ m.normalMap=TEX[k.n]; m.normalScale.set(k.ns,k.ns); } if(k.rmap) m.roughnessMap=TEX[k.rmap];
   if(!own) KMC[key]=m; return m; }
 let LOW_TEX=false; try{ LOW_TEX=localStorage.getItem('vimyLow')==='1'; }catch(e){}
-const canvasEl=renderer.domElement, ray=new THREE.Raycaster(), mouse=new THREE.Vector2(); let controls;
+const canvasEl=renderer.domElement, ray=new THREE.Raycaster(), mouse=new THREE.Vector2(); let controls; canvasEl.setAttribute('role','img'); canvasEl.setAttribute('aria-label','3D map of Vimy Ridge, April 1917. The current event is described in the text under the time bar.');
 
 const SGX=400, SGZ=336;
 const terrGeo=new THREE.PlaneGeometry(MX*2*S,MZ*2*S,SGX,SGZ); terrGeo.rotateX(-Math.PI/2);
@@ -737,7 +738,8 @@ function addShock(x,y,z,R,life){ if(shocks.length>160) return; const m=new THREE
 function updShocks(dt){ for(let i=shocks.length-1;i>=0;i--){ const e=shocks[i]; e.t+=dt; const f=e.t/e.life; if(f>=1){ if(e.m.parent) e.m.parent.remove(e.m); e.m.material.dispose(); shocks.splice(i,1); continue; }
   const k=1-Math.pow(1-f,3); e.m.scale.setScalar(e.R*(0.05+0.95*k)); e.m.material.opacity=0.95*Math.pow(1-f,2); } }
 const effects=[];
-function addFx(tex,x,y,z,s0,s1,life,op,mode){ if(effects.length>520) return; const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false,opacity:op})); sp.position.set(x,y,z); sp.scale.set(s0,s0,1); fxRoot().add(sp); if(mode==='pop') sp.material.rotation=Math.random()*Math.PI; effects.push({sp,s0,s1,life,t:0,op,mode}); }
+const RMOT=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function addFx(tex,x,y,z,s0,s1,life,op,mode){ if(effects.length>520) return; if(tex===flashTex){ const d=Math.max(1,Math.hypot(camera.position.x-x,camera.position.y-y,camera.position.z-z)), f=Math.max(s0,s1)/d; if(f>0.12) op*=0.12/f; if(RMOT) op*=0.5; }   // a burst may not fill a large part of the screen with a bright flash (photosensitivity) const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false,opacity:op})); sp.position.set(x,y,z); sp.scale.set(s0,s0,1); fxRoot().add(sp); if(mode==='pop') sp.material.rotation=Math.random()*Math.PI; effects.push({sp,s0,s1,life,t:0,op,mode}); }
 
 // ================= gun models =================
 function wheelMesh(R,wood,dark){ const w=new THREE.Group(); w.add(new THREE.Mesh(new THREE.TorusGeometry(R*S,R*0.07*S,6,28),dark));
@@ -1365,7 +1367,7 @@ const WAVES=[0,-45,-110,-150];
 // "the leading two companies in waves at 20 paces distance and three paces interval, the two rear companies following at 50 paces distance in Artillery formation in file".
 // Platoon of 4 sections: bombers, Lewis gun, riflemen, rifle-grenadiers (30 men drawn per platoon). Moppers-up (the RCR had two platoons of the 49th Bn) drawn here as the rear companies' 4th platoons.
 BNS.forEach(b=>{ b.show=b.name==='RCR'; });
-const ROLE_COL={B:'#ffcf3f',L:'#c08cff',R:'#7fb6ff',G:'#66e08a',M:'#ffffff'};
+const ROLE_COL={B:'#ffcf3f',L:'#ff4fd8',R:'#2ee6ff',G:'#66e08a',M:'#ffffff'};
 function roleOf(m){ if(m.c>=2&&m.pl===3) return 'M'; const i=m.mi; return i<8?'B':i<15?'L':i<23?'R':'G'; }
 const SUB=(()=>{ const men=[], coys=[];
   BNS.forEach((b,bi)=>{ const L=b.seg.length; if(L<2) return;
@@ -1585,7 +1587,7 @@ canvasEl.addEventListener('pointermove',e=>{ const now=performance.now(); if(now
 canvasEl.addEventListener('pointerleave',()=>{ document.getElementById('tip').style.display='none'; hoverR=null; });
 addEventListener('pointerup',()=>{ aimDrag=false; if(dragging){ dragging.target=null; dragging.buildRings(); recomputeReach(); dragging=null; } controls.enabled=true; });
 
-controls=new THREE.OrbitControls(camera,canvasEl);
+controls=new THREE.OrbitControls(camera,canvasEl); if(controls.listenToKeyEvents) controls.listenToKeyEvents(window);   // arrow keys pan the map
 controls.target.set(80,10,-60); controls.maxPolarAngle=1.45; controls.minDistance=2; controls.maxDistance=4200; controls.zoomSpeed=0.45; controls.enableDamping=true; controls.dampingFactor=.08; controls.keys={LEFT:'',UP:'',RIGHT:'',BOTTOM:''}; controls.update();
 addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); if(typeof FOL!=='undefined'&&FOL.active) setFollowView(true); renderer.setSize(innerWidth,innerHeight); drawChart(); });
 
@@ -2622,7 +2624,7 @@ function cardHTML(){
    <tr><td>Battery output <i>(model)</i></td><td>${rate} rounds/min (started at ${r0})</td></tr>
    <tr><td>Gun crew hit <i>(model)</i></td><td>${B.crew} of ${FB.crew.length}</td></tr></table>
    <p class="small">On 9 April the heavy guns also fired gas shells at German battery positions. That killed the horses, so guns that survived often couldn't be moved. The Canadians captured 54 guns between 9 and 14 April.</p>`; }
-  if(id==='rcr') return `<h3>The RCR goes over</h3><p>The Royal Canadian Regiment (7th Brigade), drawn section by section. War diary: "the leading two companies in waves at 20 paces distance and three paces interval, the two rear companies following at 50 paces distance in Artillery formation in file."</p><p>Colours: <b style="color:#ffcf3f">bombers</b>, <b style="color:#c08cff">Lewis gun</b>, <b style="color:#7fb6ff">riflemen</b>, <b style="color:#66e08a">rifle-grenadiers</b>, <b style="color:#fff">moppers-up</b>. The waves walk to about 45 m behind the barrage and wait for each lift; moppers drop into each German trench as it is crossed. Playback slowed to 4× real time.</p>`;
+  if(id==='rcr') return `<h3>The RCR goes over</h3><p>The Royal Canadian Regiment (7th Brigade), drawn section by section. War diary: "the leading two companies in waves at 20 paces distance and three paces interval, the two rear companies following at 50 paces distance in Artillery formation in file."</p><p>Colours: <b style="color:#ffcf3f">bombers</b>, <b style="color:#ff4fd8">Lewis gun</b>, <b style="color:#2ee6ff">riflemen</b>, <b style="color:#66e08a">rifle-grenadiers</b>, <b style="color:#fff">moppers-up</b>. The waves walk to about 45 m behind the barrage and wait for each lift; moppers drop into each German trench as it is crossed. Playback slowed to 4× real time.</p>`;
   if(id==='adv') return `<h3>Over the top</h3><p>The camera travels along the corps front, about 330 m up, keeping the leading Canadian waves in the middle of the frame. </p><p>The barrage lifts 100 yards (91 m) every 3 minutes, and the infantry follow close behind it. Each crosshair marks where one shell landed. Look how widely the rounds scatter around the barrage line: the creeping barrage worked by sheer weight of shells, not by precision.</p>
    <table><tr><td>Sentries hit at the featured trench <i>(model)</i></td><td>${F.hit} of 6</td></tr><tr><td>Featured battery guns in action</td><td>${b.nAlive()} of ${B.start}</td></tr></table>`;
   return intendedHTML();
@@ -2738,8 +2740,8 @@ setInterval(()=>{ const c=document.getElementById('card'); if(!c) return; c.clas
 document.getElementById('card').addEventListener('click',e=>{ if(e.target.closest('button,a,input,select')) return; e.currentTarget.classList.toggle('open'); });
 // collapsible info boxes: small toggle in each box's top-right corner
 document.querySelectorAll('#left,#right,#caption,#phase').forEach(p=>{
-  const b=document.createElement('button'); b.className='tg'; b.title='Collapse / expand'; b.textContent='▾';
-  b.onclick=()=>{ const c=p.classList.toggle('collapsed'); b.textContent=c?'▸':'▾'; placeCard(); };
+  const b=document.createElement('button'); b.className='tg'; b.title='Collapse / expand'; b.textContent='▾'; b.setAttribute('aria-label','Collapse or expand this panel'); b.setAttribute('aria-expanded','true');
+  b.onclick=()=>{ const c=p.classList.toggle('collapsed'); b.textContent=c?'▸':'▾'; b.setAttribute('aria-expanded',c?'false':'true'); placeCard(); };
   p.appendChild(b);
 });
 document.getElementById('tLow').checked=LOW; if(LOW) renderer.setPixelRatio(Math.min(1,devicePixelRatio));
