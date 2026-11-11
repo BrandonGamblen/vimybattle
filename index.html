@@ -1649,7 +1649,7 @@ function bagsMesh(list,mat,parent){ const groups=BAG_GEOS.map(()=>[]); list.forE
   const o=new THREE.Object3D(), c=new THREE.Color();
   groups.forEach((L,gi)=>{ if(!L.length) return; const im=new THREE.InstancedMesh(BAG_GEOS[gi],mat||bagMat,L.length);
     L.forEach(([p,i],k)=>{ const j=hash(i,list.length); o.position.set(p[0],p[1],p[2]); o.rotation.set((j-0.5)*0.22,(p[3]||0)+(hash(i,7)-0.5)*0.55,(hash(i,9)-0.5)*0.2); o.scale.set((p[4]||1)*(0.86+0.28*j),0.82+0.3*hash(i,3),0.9+0.2*hash(i,5)); o.updateMatrix(); im.setMatrixAt(k,o.matrix);
-      if(!mat){ const mud=hash(i,19), v=(0.3+0.26*hash(i,11))*(mud<0.3?0.7:1); c.setRGB(v,v*(0.9+0.06*hash(i,13)),v*(0.78+0.12*hash(i,17))); im.setColorAt(k,c); } });   /* sodden, mud-stained, each a different shade */
+      if(!mat){ const mud=hash(i,19), v=(0.24+0.2*hash(i,11))*(mud<0.45?0.68:1); c.setRGB(v,v*(0.9+0.06*hash(i,13)),v*(0.78+0.12*hash(i,17))); im.setColorAt(k,c); } });   /* sodden, mud-stained, each a different shade */
     im.castShadow=im.receiveShadow=true; out.add(im); });
   return out; }
 function callout(text,x,z,liftM){ return addLabel('call',text,x,z,'call',liftM*S); }   // lift in metres
@@ -1800,7 +1800,7 @@ const HUM=(function(){
   const PAL={A:{skin:[0.78,0.55,0.43],tunic:[0.36,0.32,0.21],trou:[0.34,0.30,0.20],put:[0.33,0.29,0.19],boot:[0.16,0.10,0.06],hair:[0.17,0.12,0.08],brow:[0.42,0.29,0.21],lips:[0.68,0.45,0.38],putBand:1},
              G:{skin:[0.78,0.56,0.45],tunic:[0.25,0.26,0.215],trou:[0.22,0.225,0.2],put:[0.08,0.07,0.06],boot:[0.07,0.06,0.05],hair:[0.25,0.19,0.12],brow:[0.45,0.33,0.24],lips:[0.68,0.45,0.38],putBand:0}};
   function bodyMat(side,seed){ const P=PAL[side], j=(k,a)=>{ const f=1+(hash(seed,a)-0.5)*0.14, t=(hash(seed,a+50)-0.5)*0.04; return new THREE.Vector3(P[k][0]*f*(1+t),P[k][1]*f,P[k][2]*f*(1-t)); };
-    const m=new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.97,metalness:0,skinning:true,morphTargets:true,envMapIntensity:0.32});   /* wet wool and leather: matte, no plastic sheen */ const dirt=0.35+0.65*hash(seed,21);
+    const m=new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.97,metalness:0,skinning:true,morphTargets:true,envMapIntensity:0.32});   /* wet wool and leather: matte, no plastic sheen */ const dirt=0.75+0.25*hash(seed,21);
     const U={cSkin:{value:j('skin',1)},cTunic:{value:j('tunic',2)},cTrou:{value:j('trou',3)},cPut:{value:j('put',4)},cBoot:{value:j('boot',5)},cHair:{value:j('hair',6)},cBrow:{value:j('brow',7)},cLips:{value:j('lips',8)},
       putBand:{value:P.putBand},wool:{value:TEX.wool},grime:{value:TEX.detail},dirt:{value:dirt},beard:{value:0.25+0.75*hash(seed,22)}};
     m.onBeforeCompile=sh=>{ Object.assign(sh.uniforms,U);
@@ -1825,8 +1825,9 @@ void main() {`)
   c=mix(c,vec3(0.22,0.17,0.12),vW1.x*smoothstep(0.45,0.85,gf)*dirt*0.55);
   // cloth: crease shadows at the folds, mud splashes lower down
   float fw=vEx.y*vEx.y*smoothstep(0.3,1.0,sin(vEx.z*0.4/0.05*6.2832+gf*9.0)); c*=1.0-cloth*fw*0.1;
-  c=mix(c,vec3(0.2,0.16,0.11),(cloth)*smoothstep(0.6,0.95,gf+clamp((0.6-vRest.y)/0.6,0.0,1.0)*0.5)*dirt*0.7);
-  float low=clamp((0.55-vRest.y)/0.5,0.0,1.0); c=mix(c,vec3(0.22,0.17,0.12),low*0.45*(cloth));
+  float bt=clamp(1.0-(vW1.x+vW1.y+vW1.z+vW1.w+vW2.y+vW2.z+vW2.w),0.0,1.0); c*=mix(1.0,0.78,cloth*dirt);
+  c=mix(c,vec3(0.17,0.135,0.1)*(0.8+0.4*gr),(cloth+bt)*smoothstep(0.4,0.8,gf+clamp((0.9-vRest.y)/0.9,0.0,1.0)*0.7)*dirt*0.9);
+  float low=clamp((0.75-vRest.y)/0.55,0.0,1.0); c=mix(c,vec3(0.16,0.125,0.09)*(0.75+0.5*gf),min(1.0,low*1.1)*0.85*(cloth+bt));
   float ao=mix(1.0,vW2.x,0.85); c*=ao; diffuseColor.rgb*=c;`)
        .replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>
   roughnessFactor=0.92*(vW1.y+vW1.z+vW1.w)+(0.55+0.25*vEx.x)*vW1.x+0.7*vW2.y+0.8*vW2.z+0.45*vW2.w;`)
@@ -1841,7 +1842,7 @@ void main() {`)
   function lathe(pts,seg){ return new THREE.LatheGeometry(pts.map(([r,y])=>new THREE.Vector2(r,y)),seg||40); }
   const brodieGeo=(function(){ const g=lathe([[0,0.098],[0.035,0.096],[0.065,0.088],[0.088,0.073],[0.103,0.053],[0.111,0.033],[0.114,0.02],[0.135,0.012],[0.158,0.004],[0.166,-0.002],[0.164,-0.006],[0.150,0.0],[0.12,0.008],[0.108,0.014],[0.105,0.03],[0.098,0.05],[0.08,0.075],[0.05,0.088],[0,0.09]],48); g.scale(0.94,1,1.06); return g; })();
   const stahlGeo=(function(){ return lathe([[0,0.13],[0.04,0.127],[0.075,0.115],[0.1,0.095],[0.112,0.07],[0.116,0.045],[0.118,0.02],[0.124,0.0],[0.132,-0.03],[0.142,-0.055],[0.14,-0.06],[0.128,-0.04],[0.118,-0.01],[0.11,0.02],[0.108,0.05],[0.098,0.085],[0.07,0.108],[0.035,0.118],[0,0.12]],48); })();
-  function helmet(side){ const g=new THREE.Group(), m=kindMat('steel',side==='A'?0x55583f:0x5b6152,true); m.side=THREE.DoubleSide;
+  function helmet(side){ const g=new THREE.Group(), m=kindMat('steel',side==='A'?0x55583f:0x5b6152,true); m.side=THREE.DoubleSide; m.roughness=0.9; m.metalness=0.05; m.envMapIntensity=0.12; m.color.multiplyScalar(0.55);   /* dull, mud-smeared paint */
     const h=new THREE.Mesh(side==='A'?brodieGeo:stahlGeo,m); g.add(h);
     if(side==='G'){ for(const s of [-1,1]){ const lug=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.014,0.025,10),m); lug.rotation.z=Math.PI/2; lug.position.set(s*0.112,0.04,0.0); g.add(lug); } }
     else { const strap=new THREE.Mesh(new THREE.TorusGeometry(0.085,0.004,4,24,Math.PI),Lmat(0x3a2414)); strap.rotation.y=Math.PI/2; strap.rotation.x=Math.PI; strap.position.y=0.0; strap.scale.set(1,1.15,1); g.add(strap); }
@@ -2052,6 +2053,12 @@ void main() {`)
     else if(name==='crouch'){ spine(h,0.3,0,0); look(h,-0.25,0); R.position.y=hipY-0.45;   // waiting on one knee, rifle held upright
       footTo(h,'L',V(footL.x,ankleY,footL.z+0.4),V(0,0.5,1)); footTo(h,'R',V(footR.x,ankleY+0.02,footR.z-0.45),V(0,-0.6,1),V(0,-0.2,-1));
       const c=bonePos(h,u.B('spine01')); if(rifle||lw) holdWeapon(h,c.clone().add(V(-0.12,-0.42,0.32)),V(0.08,1,0.25),V(0,0,1)); else if(pistol){ handTo(h,'R',c.clone().add(V(-0.2,-0.4,0.25)),V(0,-1,0.3),V(1,0,0)); handTo(h,'L',c.clone().add(V(0.22,-0.45,0.2)),V(0,-1,0.2),V(-1,0,0)); if(u.weapon) u.weapon.visible=false; } }
+    else if(name==='lean'){ spine(h,1.05,-0.18+0.1*Math.sin(u.phase),0.05); look(h,-0.75,0.12); R.position.y=hipY-0.1; R.position.z=-0.14;   // slumped forward over the sandbags, rifle laid across the top
+      footTo(h,'L',V(footL.x+0.03,ankleY,footL.z+0.12),V(0.15,0,1)); footTo(h,'R',V(footR.x-0.03,ankleY,footR.z-0.32),V(-0.25,0,1));
+      const sh=bonePos(h,u.B('upperarm01.R')); if(rifle||lw) holdWeapon(h,sh.clone().add(V(0.1,-0.12,0.22)),V(0.1,0.05,1),V(0,1,0)); }
+    else if(name==='sit'){ R.position.y=0.17; R.position.z=-0.08; spine(h,-0.32+0.18*Math.sin(u.phase*3),0.15*Math.sin(u.phase),0.06*Math.cos(u.phase)); look(h,0.35+0.2*Math.sin(u.phase*2),0.3*Math.sin(u.phase*5));   // slumped against the trench wall, knees up
+      const sp=0.5+0.25*Math.sin(u.phase*7); footTo(h,'L',V(0.2,ankleY,0.38+sp*0.3),V(0.15,0.5,1)); footTo(h,'R',V(-0.18,ankleY,0.5+(1-sp)*0.4),V(-0.1,0.6,1));
+      const c=bonePos(h,u.B('spine01')); if(rifle||lw) holdWeapon(h,c.clone().add(V(-0.05,-0.25,0.42)),V(0.05,1,-0.2),V(0,0,1)); else { handTo(h,'L',c.clone().add(V(0.2,-0.25,0.4)),V(0,-1,0.4),V(-1,0,0)); handTo(h,'R',c.clone().add(V(-0.2,-0.25,0.4)),V(0,-1,0.4),V(1,0,0)); } }
     else if(name==='kneel'){ spine(h,0.18,0,0); look(h,-0.15,0); R.position.y=hipY-0.45;
       footTo(h,'L',V(footL.x,ankleY,footL.z+0.4),V(0,0.5,1)); footTo(h,'R',V(footR.x,ankleY+0.02,footR.z-0.45),V(0,-0.6,1),V(0,-0.2,-1));
       const sh=bonePos(h,u.B('upperarm01.R')); if(rifle||lw) holdWeapon(h,sh.clone().add(V(0.07,-0.1,0.07)),V(0,0.02,1),V(0,1,0)); else if(pistol) holdWeapon(h,sh.clone().add(V(0,0,0.5)),V(0,0,1),V(0,1,0),false); }
@@ -2146,7 +2153,7 @@ function buildDiorama(cx,cz,dir,opt){ clearDiorama(); const G=new THREE.Group();
     const barbs=[]; for(let i=0;i+1<ws.length;i+=2){ const a=ws[i],b=ws[i+1]; for(let t=0.05;t<1;t+=0.08){ const q=a.clone().lerp(b,t), e=0.0025; barbs.push(q.clone().add(new THREE.Vector3(e,e,0)),q.clone().add(new THREE.Vector3(-e,-e,0)),q.clone().add(new THREE.Vector3(0,e,e)),q.clone().add(new THREE.Vector3(0,-e,-e))); } }
     G.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(barbs),new THREE.LineBasicMaterial({color:0x3e2f24}))); }
   // trench: sandbag parapet, timber revetment on both walls, duckboards on the floor
-  if(tr){ const bags=[], wood=(DIO.woodM||(DIO.woodM=new THREE.MeshStandardMaterial({map:TEX.wood,color:0x4a4034,roughness:0.85,envMapIntensity:0.2}))), posts=[], boards=[], duck=[];
+  if(tr){ const bags=[], wood=(DIO.woodM||(DIO.woodM=new THREE.MeshStandardMaterial({map:TEX.wood,color:0x2f2a22,roughness:0.9,envMapIntensity:0.15}))), posts=[], boards=[], duck=[];
     for(let i=0;i<tr.length-1;i++){ const [ax,az]=tr[i],[bx2,bz]=tr[i+1], L=Math.hypot(bx2-ax,bz-az), ux=(bx2-ax)/L, uz=(bz-az)/L, nx=-uz, nz=ux, ry=Math.atan2(ux,uz)+Math.PI/2;
       for(let d=0;d<L;d+=0.44) for(const [off,nl] of [[1.3,5],[1.68,4],[2.06,3],[2.44,2]]){ const sd=Math.round(d*10)+i*977+off*31, lx=ax+ux*d, lz=az+uz*d, o2=off+(rnd(sd+3)-0.5)*0.12, bx=cx+lx+fx*o2, bz=cz+lz+fz*o2;   /* a heaped sandbag wall rising from the front revetment: every bag rests on the ground or on the bag below */
         let base=1e9; for(const [ox,oz] of [[0,0],[0.3,0],[-0.3,0],[0,0.18],[0,-0.18]]) base=Math.min(base,DIO.y(bx+ux*ox+fx*oz,bz+uz*ox+fz*oz));
@@ -2173,7 +2180,7 @@ function buildDiorama(cx,cz,dir,opt){ clearDiorama(); const G=new THREE.Group();
   if(tr&&opt.firestep){ const list=[]; for(let i=0;i<tr.length-1;i++){ const [ax,az]=tr[i],[bx2,bz]=tr[i+1], L=Math.hypot(bx2-ax,bz-az), ux=(bx2-ax)/L, uz=(bz-az)/L; for(let d=0;d<L;d+=1.2){ const x=cx+ax+ux*d+fx*1.0, z=cz+az+uz*d+fz*1.0; list.push([x,z,Math.atan2(ux,uz)]); } }
     const fg=new THREE.BoxGeometry(0.6*S,0.5*S,1.22*S), fm=new THREE.MeshStandardMaterial({map:TEX.mud,color:0x5a4a3a,roughness:0.6}); const im=new THREE.InstancedMesh(fg,fm,list.length), o=new THREE.Object3D();
     list.forEach(([x,z,ry],i)=>{ o.position.set(x*S,DIO.y(x,z)+0.25*S,z*S); o.rotation.set(0,ry,0); o.updateMatrix(); im.setMatrixAt(i,o.matrix); }); im.castShadow=im.receiveShadow=true; G.add(im);
-    const pl=new THREE.BoxGeometry(0.03*S,0.48*S,1.2*S), pm=(DIO.woodM||(DIO.woodM=new THREE.MeshStandardMaterial({map:TEX.wood,color:0x4a4034,roughness:0.85,envMapIntensity:0.2}))), im2=new THREE.InstancedMesh(pl,pm,list.length); list.forEach(([x,z,ry],i)=>{ o.position.set((x-fx*0.31)*S,DIO.y(x,z)+0.24*S,(z-fz*0.31)*S); o.rotation.set(0,ry,0); o.updateMatrix(); im2.setMatrixAt(i,o.matrix); }); im2.castShadow=im2.receiveShadow=true; G.add(im2); }
+    const pl=new THREE.BoxGeometry(0.03*S,0.48*S,1.2*S), pm=(DIO.woodM||(DIO.woodM=new THREE.MeshStandardMaterial({map:TEX.wood,color:0x2f2a22,roughness:0.9,envMapIntensity:0.15}))), im2=new THREE.InstancedMesh(pl,pm,list.length); list.forEach(([x,z,ry],i)=>{ o.position.set((x-fx*0.31)*S,DIO.y(x,z)+0.24*S,(z-fz*0.31)*S); o.rotation.set(0,ry,0); o.updateMatrix(); im2.setMatrixAt(i,o.matrix); }); im2.castShadow=im2.receiveShadow=true; G.add(im2); }
   // debris: shattered tree stumps, broken timber, corrugated iron, a dropped helmet; kept out of the action
   { const nd=LOW?5:16; for(let k=0;k<nd;k++){ const a=rnd(seed+k+300)*Math.PI*2, r=5+rnd(seed+k+400)*26, dx=Math.cos(a)*r, dz=Math.sin(a)*r;
       const lf=dx*fx+dz*fz, ll=dx*sx+dz*sz; if(ll<3&&lf>-15&&lf<25) continue;   // keep the camera's side clear
@@ -2187,8 +2194,8 @@ function groundMat(){ if(DIO.mat) return DIO.mat; const m=new THREE.MeshStandard
     sh.vertexShader=sh.vertexShader.replace('void main() {','attribute vec3 aMix; attribute float aAO; varying vec3 vMix; varying float vAO;\nvoid main() {').replace('#include <begin_vertex>','#include <begin_vertex>\n vMix=aMix; vAO=aAO;');
     sh.fragmentShader=sh.fragmentShader.replace('void main() {','varying vec3 vMix; varying float vAO; uniform sampler2D chalkMap; uniform sampler2D detail;\nvoid main() {')
      .replace('#include <map_fragment>',`if(length(vUv*3.2)>41.4) discard; vec4 texelColor=0.6*texture2D(map,vUv)+0.4*texture2D(map,vec2(vUv.y,-vUv.x)*0.41+0.3); texelColor.rgb*=0.75+0.5*texture2D(detail,vUv*0.25).r; vec3 chc=texture2D(chalkMap,vUv*1.7).rgb; vec3 col=mix(texelColor.rgb,chc,vMix.x);
-       float pud=smoothstep(0.58,0.62,texture2D(detail,vUv*0.11+0.13).r*0.6+vMix.z*0.55)*(1.0-vMix.y); col*=0.72; col*=mix(1.0,0.55,vMix.z); col=mix(col,vec3(0.34,0.33,0.31),vMix.y*0.55); col=mix(col,col*0.35+vec3(0.03,0.028,0.022),pud); diffuseColor.rgb*=col*vAO;`)
-     .replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\n roughnessFactor=mix(roughnessFactor,0.3,vMix.z*0.8); { float pud=smoothstep(0.58,0.62,texture2D(detail,vUv*0.11+0.13).r*0.6+vMix.z*0.55)*(1.0-vMix.y); roughnessFactor=mix(roughnessFactor*0.75,0.04,pud); }'); };
+       float pud=smoothstep(0.52,0.56,texture2D(detail,vUv*0.11+0.13).r*0.6+vMix.z*0.55)*(1.0-vMix.y); col*=0.62; col*=mix(1.0,0.55,vMix.z); col=mix(col,vec3(0.34,0.33,0.31),vMix.y*0.55); col=mix(col,col*0.35+vec3(0.03,0.028,0.022),pud); diffuseColor.rgb*=col*vAO;`)
+     .replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\n roughnessFactor=mix(roughnessFactor,0.3,vMix.z*0.8); { float pud=smoothstep(0.52,0.56,texture2D(detail,vUv*0.11+0.13).r*0.6+vMix.z*0.55)*(1.0-vMix.y); roughnessFactor=mix(roughnessFactor*0.75,0.04,pud); }'); };
   return DIO.mat=m; }
 function waterMat(){ if(DIO.wmat) return DIO.wmat; const m=new THREE.MeshStandardMaterial({color:0x26231c,roughness:0.12,metalness:0.0,transparent:true,opacity:0.95,envMapIntensity:0.55});
   if(!LOW_TEX){ m.normalMap=TEX.waterN; m.normalScale.set(0.25,0.25); } return DIO.wmat=m; }
@@ -2250,6 +2257,42 @@ function propMG(concrete){ const g=new THREE.Group(); if(concrete){ bx(2.6,1.0,2
   return g; }
 function propDugout(){ const g=new THREE.Group(); bx(1.4,1.7,0.12,0x5a4630,0,0.85,0,g); bx(1.0,1.45,0.14,0x0d0c0a,0,0.75,0.01,g); bx(0.14,1.8,0.18,0x6b5236,-0.6,0.9,0.05,g); bx(0.14,1.8,0.18,0x6b5236,0.6,0.9,0.05,g); bx(1.5,0.18,0.2,0x6b5236,0,1.75,0.05,g); return g; }
 function propBoxes(){ const g=new THREE.Group(); for(let i=0;i<5;i++) bx(0.5,0.3,0.32,0x5b4a30,(i%3)*0.55-0.5,0.15+Math.floor(i/3)*0.3,0,g); return g; }
+// 7.7 cm FK 96 n.A. built to its main dimensions (metres): L/27 barrel (2.08 m), 12-spoke wheels of about 1.36 m, shield with axle seats, box trail with spade.
+// Origin on the ground under the axle; the muzzle points along -x. Mud is painted onto the lower parts by height.
+function propFK96(seed){ const g=new THREE.Group(), paint=new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:0.82,metalness:0.15,map:TEX.detail,envMapIntensity:0.25}), steel=new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:0.6,metalness:0.5,envMapIntensity:0.3});
+  const add=(geo,m,x,y,z,rx,ry,rz)=>{ const o=new THREE.Mesh(geo,m||paint); o.position.set(x,y,z); o.rotation.set(rx||0,ry||0,rz||0); o.castShadow=o.receiveShadow=true; g.add(o); return o; };
+  const R0=0.68, tw=0.765;
+  for(const sz of [-1,1]){ const w=new THREE.Group(); w.position.set(0,R0,sz*tw); g.add(w);
+    const rim=new THREE.Mesh(new THREE.TorusGeometry(R0-0.045,0.04,6,40),paint), tyre=new THREE.Mesh(new THREE.TorusGeometry(R0-0.012,0.016,5,40),steel); rim.scale.z=1.6; tyre.scale.z=3.2; w.add(rim,tyre);
+    for(let k=0;k<12;k++){ const a=k/12*Math.PI*2, sp=new THREE.Mesh(new THREE.CylinderGeometry(0.022,0.03,R0-0.12,6),paint); sp.position.set(Math.cos(a)*(R0-0.06)/2,Math.sin(a)*(R0-0.06)/2,0); sp.rotation.z=a-Math.PI/2; w.add(sp); }
+    const hub=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.12,0.26,12),paint); hub.rotation.x=Math.PI/2; w.add(hub); const cap=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.34,8),steel); cap.rotation.x=Math.PI/2; w.add(cap);
+    w.rotation.z=(hash(seed,sz+3)-0.5)*0.6; w.traverse(o=>{ o.castShadow=o.receiveShadow=true; }); }
+  add(new THREE.CylinderGeometry(0.045,0.045,1.62,10),steel,0,R0,0,Math.PI/2);                    // axle
+  const sh=add(new THREE.BoxGeometry(0.012,1.02,1.5),paint,-0.2,1.1,0,0,0,-0.12);                       // shield
+  add(new THREE.BoxGeometry(0.012,0.34,1.12),paint,-0.2,0.48,0,0,0,0.05);                                // lower apron between the wheels
+  add(new THREE.BoxGeometry(0.012,0.22,1.5),paint,-0.29,1.68,0,0,0,-0.45);                               // folding top plate
+  for(const sz of [-1,1]){ add(new THREE.BoxGeometry(0.3,0.05,0.32),paint,-0.42,0.84,sz*0.42); add(new THREE.BoxGeometry(0.05,0.3,0.3),paint,-0.28,0.98,sz*0.42); }   // axle-tree seats
+  const cr=new THREE.Group(); cr.position.set(0.05,0.98,0); cr.rotation.z=0.06; g.add(cr);           // elevating mass: cradle, recoil cylinder, barrel, breech
+  const bar=new THREE.Mesh(new THREE.CylinderGeometry(0.052,0.068,2.08,16),steel); bar.rotation.z=Math.PI/2; bar.position.x=-0.5; cr.add(bar);
+  const mz=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.056,0.08,16),steel); mz.rotation.z=Math.PI/2; mz.position.x=-1.52; cr.add(mz);
+  const rc=new THREE.Mesh(new THREE.CylinderGeometry(0.075,0.075,1.35,12),paint); rc.rotation.z=Math.PI/2; rc.position.set(-0.25,-0.14,0); cr.add(rc);
+  const cra=new THREE.Mesh(new THREE.BoxGeometry(1.1,0.12,0.2),paint); cra.position.set(0.05,-0.1,0); cr.add(cra);
+  const br=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.2,0.2),steel); br.position.set(0.66,0,0); cr.add(br);
+  const sg=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.025,0.32,8),steel); sg.rotation.z=Math.PI/2; sg.position.set(0.3,0.2,0.16); cr.add(sg);   // sight, left side
+  const hw=new THREE.Mesh(new THREE.TorusGeometry(0.11,0.012,5,16),steel); hw.position.set(0.45,-0.2,0.24); cr.add(hw);
+  cr.traverse(o=>{ o.castShadow=o.receiveShadow=true; });
+  const tl=Math.hypot(2.95,0.62), ta=Math.atan2(0.62,2.95);                                                // box trail down to the spade
+  for(const sz of [-1,1]) add(new THREE.BoxGeometry(tl,0.2,0.035),paint,1.5,0.36,sz*0.13,0,0,ta).geometry;
+  add(new THREE.BoxGeometry(tl*0.85,0.025,0.3),paint,1.65,0.28,0,0,0,ta);
+  add(new THREE.BoxGeometry(0.05,0.36,0.56),steel,3.0,0.02,0,0,0,0.35);                                // spade, dug in
+  add(new THREE.CylinderGeometry(0.02,0.02,0.9,6),paint,2.75,0.28,0,Math.PI/2);                          // handspike
+  // paint the mud on: caked below 0.5 m, splashed above, every gun its own
+  g.updateMatrixWorld(true); const v=new THREE.Vector3();
+  g.traverse(o=>{ if(!o.isMesh) return; const P=o.geometry.attributes.position, C=new Float32Array(P.count*3), st=o.material===steel;
+    for(let i=0;i<P.count;i++){ v.fromBufferAttribute(P,i).applyMatrix4(o.matrixWorld); const n=vnoise(v.x*7+seed,v.z*7+v.y*5), mud=Math.min(1,Math.max(0,(0.55-v.y)/0.45)+(n>0.62?0.6:0)*Math.max(0,1.2-v.y));
+      const base=st?[0.3,0.31,0.29]:[0.36,0.38,0.32]; for(let k=0;k<3;k++) C[i*3+k]=base[k]*(1-mud)+[0.15,0.12,0.09][k]*mud*(0.8+0.4*n); }
+    o.geometry.setAttribute('color',new THREE.BufferAttribute(C,3)); });
+  return g; }
 function propGun60(){ const g=makePiece(TYPES.a60,'A'); g.scale.setScalar(1/S); return g; }
 
 // ---- the men. Every fact in the text is from the sources listed with each man; places marked are placed by sector, not by a map reference.
@@ -2429,7 +2472,7 @@ function renderPeople(){ const card1=m=>`<div class="pc"><b>${m.rank} ${m.name}<
 let shotScene=null;
 function setShotScene(id){ const want=(id==='fp'||id==='fb')?id:null; if(want===shotScene) return;
   if(shotScene==='fp'){ FP.rib.visible=true; FP.bags.visible=true; FP.ents.forEach(e=>e.m.visible=true); FP.sentries.forEach(q=>{ q.y0=q.yOrig; q.f.position.x=q.x*S; q.f.position.z=q.z*S; if(q.alive) q.f.position.y=q.y0; }); }
-  if(shotScene==='fb'){ FB.parts.forEach(q=>q.visible=true); FB.crew.forEach(c=>{ if(c.p0) c.f.position.copy(c.p0); }); }
+  if(shotScene==='fb'){ FB.parts.forEach(q=>q.visible=true); FB.b.pieces.forEach(p=>{ if(p.mesh) p.mesh.visible=!!FB.b.lodNear; }); FB.crew.forEach(c=>{ if(c.p0) c.f.position.copy(c.p0); }); }
   if(shotScene){ if(CS.ok) CS.exit(); clearDiorama(); startFollowOv(false); }
   shotScene=want; if(!want) return;
   startFollowOv(true);
@@ -2438,7 +2481,11 @@ function setShotScene(id){ const want=(id==='fp'||id==='fb')?id:null; if(want===
     FP.rib.visible=false; FP.bags.visible=false; FP.ents.forEach(e=>e.m.visible=false);
     const sc=o=>{ o.scale.setScalar(S); return shadowAll(o,true,true); };
     FP.ents.forEach(e=>DIO.place(sc(propDugout()),-1.25,-e.u,0));
-    FP.sentries.forEach(q=>{ if(q.yOrig===undefined) q.yOrig=q.y0; q.y0=DIO.y(q.x+dir[0]*0.3,q.z+dir[1]*0.3)+0.5*S; q.f.position.x=(q.x+dir[0]*0.3)*S; q.f.position.z=(q.z+dir[1]*0.3)*S; if(q.alive) q.f.position.y=q.y0; q.f.rotation.y=Math.atan2(dir[0],dir[1]); poseHuman(q.f,'aim',0); }); }
+    const o0=DIO.at(0,0), o1=DIO.at(0,1), sv=[o1[0]-o0[0],o1[1]-o0[1]];
+    FP.sentries.forEach((q,qi)=>{ if(q.yOrig===undefined) q.yOrig=q.y0; const l=(q.x-o0[0])*sv[0]+(q.z-o0[1])*sv[1], [x,z]=DIO.at(0.45,l);
+      q.y0=DIO.y(x,z)-0.02*S; q.f.position.set(x*S,q.y0,z*S); q.f.rotation.y=Math.atan2(dir[0],dir[1])+(hash(qi,31)-0.5)*0.3; q.f.userData.phase=hash(qi,32)*6.28; if(q.alive) poseHuman(q.f,qi%2?'aim':'lean',0);
+      if(qi===2){ const men=[['sit',-0.9,1.3,0],['sit',-0.95,2.5,0.4],['lean',0.45,-1.1,0],['sit',-0.9,-2.6,-0.3],['crouch',-0.2,3.6,2.2],['sit',-0.95,4.6,0.2]];
+        men.forEach(([ps,f,dl,yw],k)=>{ const h=human({side:'G',kit:'rifle'}); h.scale.setScalar(S); h.userData.phase=hash(k,41)*6.28; const [mx,mz]=DIO.at(f,l+dl); h.position.set(mx*S,DIO.y(mx,mz)-0.03*S,mz*S); h.rotation.y=Math.atan2(dir[0],dir[1])+yw+(hash(k,42)-0.5)*0.35; poseHuman(h,ps,0); shadowAll(h,true,true); DIO.group.add(h); }); } }); }
   else { const b=FB.b; buildDiorama(b.x,b.z,[1,0],{craters:34,flatW:b.pieces.map(p=>[0,p.oz,6]),snow:true});
     FB.parts.forEach(q=>q.visible=false);
     // the gun pits rebuilt on the close-up ground: an uneven ring of sandbags, settled and partly knocked down, lined inside with wet timber
@@ -2450,12 +2497,18 @@ function setShotScene(id){ const want=(id==='fp'||id==='fb')?id:null; if(want===
         if(h<4&&rnd(pi*29+i)<0.6){ const a2=a+(rnd(i+3)-0.5)*0.3, r2=r+0.5+rnd(i+5)*1.0, x2=gx+r2*Math.cos(a2), z2=gz+r2*Math.sin(a2); L.push([x2*S,DIO.y(x2,z2)+0.09*S,z2*S,rnd(i+7)*6.28]); } }   // knocked off the top, lying outside
       for(let i=0;i<22;i++){ const a=i/22*Math.PI*2; if(Math.cos(a)>0.72) continue; const x=gx+3.2*Math.cos(a), z=gz+3.2*Math.sin(a); posts.push([x,z,-a]); for(let k=0;k<4;k++) planks.push([gx+3.22*Math.cos(a+Math.PI/22),gz+3.22*Math.sin(a+Math.PI/22),-a-Math.PI/22,k]); } });
     bagsMesh(L,null,DIO.group);
-    { const wm=DIO.woodM||(DIO.woodM=new THREE.MeshStandardMaterial({map:TEX.wood,color:0x4a4034,roughness:0.85,envMapIntensity:0.2})), o=new THREE.Object3D();
+    b.pieces.forEach((p,pi)=>{ if(p.mesh) p.mesh.visible=false; const gx=b.x, gz=b.z+p.oz, gun=propFK96(pi*7+1); gun.scale.setScalar(S); gun.position.set(gx*S,DIO.y(gx,gz)-0.04*S,gz*S); if(!p.alive){ gun.rotation.z=0.18; gun.rotation.x=0.1; } DIO.group.add(gun);
+      const sm=new THREE.MeshStandardMaterial({color:0x8a7040,roughness:0.45,metalness:0.6}), tip=new THREE.MeshStandardMaterial({color:0x4a4a3e,roughness:0.6,metalness:0.3}), cg=new THREE.CylinderGeometry(0.044,0.044,0.24,10), tg=new THREE.CylinderGeometry(0.012,0.039,0.17,10), sl=[];
+      for(let r=0;r<3;r++) for(let k=0;k<11-r;k++) sl.push([-1.5-k*0.092-r*0.046,r]);
+      const c1=new THREE.InstancedMesh(cg,sm,sl.length), c2=new THREE.InstancedMesh(tg,tip,sl.length), o=new THREE.Object3D();
+      sl.forEach(([dz,r],i)=>{ const x=gx+1.6, z=gz+dz, y=DIO.y(x,z)+(0.044+r*0.078)*S; o.rotation.set(0,0,Math.PI/2); o.position.set((x+0.12)*S,y,z*S); o.scale.setScalar(S); o.updateMatrix(); c1.setMatrixAt(i,o.matrix); o.position.set((x-0.085)*S,y,z*S); o.updateMatrix(); c2.setMatrixAt(i,o.matrix); });
+      c1.castShadow=c2.castShadow=c1.receiveShadow=c2.receiveShadow=true; DIO.group.add(c1,c2); });   // ready rounds stacked by the trail
+    { const wm=DIO.woodM||(DIO.woodM=new THREE.MeshStandardMaterial({map:TEX.wood,color:0x2f2a22,roughness:0.9,envMapIntensity:0.15})), o=new THREE.Object3D();
       const pg=new THREE.CylinderGeometry(0.06*S,0.07*S,1.1*S,7), im=new THREE.InstancedMesh(pg,wm,posts.length); posts.forEach(([x,z,r],i)=>{ o.position.set(x*S,DIO.y(x,z)+0.5*S,z*S); o.rotation.set((rnd(i+1)-0.5)*0.12,0,(rnd(i+2)-0.5)*0.12); o.updateMatrix(); im.setMatrixAt(i,o.matrix); }); im.castShadow=im.receiveShadow=true; DIO.group.add(im);
       const kg=new THREE.BoxGeometry(0.04*S,0.2*S,0.92*S), im2=new THREE.InstancedMesh(kg,wm,planks.length); planks.forEach(([x,z,r,k],i)=>{ if(rnd(i+77)<0.08){ o.scale.set(0,0,0); } else o.scale.set(1,1,0.9+0.2*rnd(i)); o.position.set(x*S,DIO.y(x,z)+(0.12+k*0.22)*S,z*S); o.rotation.set((rnd(i+3)-0.5)*0.05,r,(rnd(i+4)-0.5)*0.04); o.updateMatrix(); im2.setMatrixAt(i,o.matrix); }); im2.castShadow=im2.receiveShadow=true; DIO.group.add(im2); }
     // the crew: each man at his own job, not a copy of the next one
-    const jobs=[['kneel',-0.9,0.4,1.25],['crouch',0.2,-0.6,1.5],['stand',1.6,0.9,-1.2],['walk',2.3,-1.1,2.6]];
-    FB.crew.forEach((c,ci)=>{ const pc=b.pieces[c.pi], j=jobs[(ci+c.pi)%4], gx=b.x+j[1]+(hash(ci,5)-0.5)*0.4, gz=b.z+pc.oz+j[2]*1.4+(hash(ci,6)-0.5)*0.4;
+    const jobs=[['kneel',0.8,0.72,-1.57],['crouch',1.05,-0.72,-1.2],['stand',2.1,1.0,-1.9],['walk',2.6,-1.25,-0.9]];
+    FB.crew.forEach((c,ci)=>{ const pc=b.pieces[c.pi], j=jobs[(ci+c.pi)%4], gx=b.x+j[1]+(hash(ci,5)-0.5)*0.15, gz=b.z+pc.oz+j[2]*1.4+(hash(ci,6)-0.5)*0.15;
       c.f.position.set(gx*S,DIO.y(gx,gz),gz*S); c.f.rotation.y=j[3]+(hash(ci,7)-0.5)*0.5; c.pose=j[0]; c.f.userData.phase=hash(ci,8)*6.28; if(c.alive) poseHuman(c.f,c.pose,hash(ci,9)*3); }); }
   cineShot(); }
 function cineShot(){ if(!CS.ok||!shotScene) return; CS.enter(); document.body.classList.add('tour');
