@@ -10,7 +10,7 @@
 <meta property="og:description" content="Follow the Canadian Corps' attack on Vimy Ridge, 9–12 April 1917, phase by phase on a 3D map built from 1917 trench maps.">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%233b2f1e'/%3E%3Cpath d='M3 24 L11 13 L16 17 L22 8 L29 24 Z' fill='%23c9b27a'/%3E%3C/svg%3E">
-<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <style>
 :root{--bg:rgba(24,26,22,.9);--ink:#e8e4d6;--dim:#a9a593;--line:#4a4a3c;--al:#7fa0e8;--ge:#e2705c;--red:#d8503c;}
 *{box-sizing:border-box}
@@ -98,7 +98,7 @@ body.cine.tour #phase{display:block!important;top:8vh;bottom:auto;left:22vw;righ
   <li>Drag or scroll on the map at any time to take the camera yourself: drag to turn, right-drag to slide, scroll to zoom. Clicking a battery or a label does not take the camera. Tick <b>Guided camera</b> to give it back.</li>
   <li>Click any gun battery to see its range and how accurate it is.</li>
  </ol>
- <p class="small">Blue ground is held by the Canadians, red by the Germans. Orange bands are the barrage. Figures marked <i>model</i> or <i>illustrative</i> are estimates, not 1917 records. If it runs slowly, tick <b>Low detail</b> on the left.</p>
+ <p class="small">Blue ground is held by the Canadians, red by the Germans. Orange marks the barrage (shell bursts, and the band when "Barrage band" is on); in the preparation it marks wire-cutting targets. Figures marked <i>model</i> or <i>illustrative</i> are estimates, not 1917 records. If it runs slowly, tick <b>Low detail</b> on the left.</p>
  <button id="introGo" style="margin-top:6px" disabled>Loading the map…</button>
 </div></div>
 <div id="people" style="display:none"><div class="box"><h2>Follow a man</h2>
@@ -114,7 +114,7 @@ body.cine.tour #phase{display:block!important;top:8vh;bottom:auto;left:22vw;righ
 <div id="left" class="panel">
   <h1 class="keep">Vimy Ridge<br><span id="hDate">9 April 1917</span></h1>
   <div class="sub"><span id="phSub">Phase 1 · Zero hour to the Black Line</span> · Canadian Corps, Battle of Arras</div>
-  <div class="warn">The front lines, the Black, Red, Blue and Brown objective lines, the Pimple operation, the corps boundaries and the brigade positions are <b>traced from two 1917 maps</b> and placed using village coordinates, accurate to about 50–130 m at the control points. The <b>terrain comes from the contour lines on your 1917 map</b>; outside the map's edges the ground is faded and carries no relief data. The artillery positions are <b>schematic</b>. See "How this map was built" on the right.</div>
+  <div class="warn">The front lines, the Black, Red, Blue and Brown objective lines, the Pimple operation, the corps boundaries and the brigade positions are <b>traced from two 1917 maps</b> and placed using village coordinates, accurate to about 60–210 m (up to 340 m at the north edge) at the control points. The <b>terrain comes from the contour lines on the 1917 contour map</b>; outside the map's edges the ground is faded and carries no relief data. The artillery positions are <b>schematic</b>. See "How this map was built" on the right.</div>
 
   <h2>Display</h2>
   <div class="tog">
@@ -141,7 +141,7 @@ body.cine.tour #phase{display:block!important;top:8vh;bottom:auto;left:22vw;righ
   <div class="small legend" style="margin-top:6px">
     <span style="background:rgb(70,100,170)"></span>Allied-held <span style="background:rgb(165,50,55);margin-left:6px"></span>German-held<br>
     <span style="background:#111"></span>Black <span style="background:#d23a2a"></span>Red <span style="background:#2f6fe0"></span>Blue <span style="background:#8a5a2b"></span>Brown objective lines<br>
-    <span style="background:#ffb347"></span>Creeping barrage (band off by default) <br>The RCR (showcase battalion), by section: <span style="background:#ffcf3f"></span>bombers <span style="background:#c08cff"></span>Lewis gun <span style="background:#7fb6ff"></span>riflemen <span style="background:#66e08a"></span>rifle-grenadiers <span style="background:#ffffff"></span>moppers-up<br><span style="background:#9fc3ff"></span>Canadian infantry<br>
+    <span style="background:#ffb347"></span>Creeping barrage (band off by default) <br>The RCR (battalion shown section by section), by section: <span style="background:#ffcf3f"></span>bombers <span style="background:#c08cff"></span>Lewis gun <span style="background:#7fb6ff"></span>riflemen <span style="background:#66e08a"></span>rifle-grenadiers <span style="background:#ffffff"></span>moppers-up<br><span style="background:#9fc3ff"></span>Canadian infantry<br>
     Grid: 1 km squares; 100 m squares when zoomed in. The scale bar (just above the time bar, on the right) shows which. Lowest camera height: 20 m.
   </div>
 
@@ -176,7 +176,7 @@ body.cine.tour #phase{display:block!important;top:8vh;bottom:auto;left:22vw;righ
    <tr><td>Shells allotted</td><td>1.6 million</td></tr>
    <tr><td>Barrage</td><td>Lifted 100 yd every 3 minutes</td></tr>
    <tr><td>Counter-battery</td><td>125,900 rounds in the final week; 83% of the 212 German guns located beforehand (Official History); how many were silenced is disputed</td></tr>
-   <tr><td>Subways</td><td>11 to 13 (sources differ), 265 m to 1.7 km long, about 10 m deep</td></tr>
+   <tr><td>Subways</td><td>11 to 13 (sources differ), 265 m to 1.7 km long, about 7.5–10 m deep</td></tr>
    <tr><td>Canadian losses, 9–12 Apr</td><td>10,602 (3,598 killed, 7,004 wounded)</td></tr>
   </table>
 
@@ -185,7 +185,7 @@ body.cine.tour #phase{display:block!important;top:8vh;bottom:auto;left:22vw;righ
 
   <details><summary>How this map was built (read this)</summary><div class="small" style="margin-top:4px">
   <b>Real:</b> village positions (GeoNames and Wikipedia coordinates), Hill 145's position and height, the objective line names and what each one covered, the division order, the barrage rate, the artillery totals, the gun ranges, and the event times shown.<br>
-  <b>Traced:</b> the Canadian and German front lines come from the map "The Canadian and German Front Line Positions as at April 9th 1917". The objective lines, the Pimple operation, the corps boundaries, and the brigade assembly positions (division sectors are split midway between neighbouring brigades) come from "Map Illustrating Plan of Attack on Vimy Ridge, 9th April 1917". Both maps are reproduced on the RCR's Vimy pilgrimage pages. Each map was matched to modern coordinates using 8–9 villages; the leftover error is about 60–210 m, rising to about 340 m at the north edge. The brigade battalion lists come from the Canadian Corps dispositions table for zero hour. As a check, the traced Black Line runs 710–960 m beyond the German front (the sources say about 700 yd), and the Red Line passes 240 m from Hill 145.<br><b>Terrain:</b> the contour lines (10 m interval, 50–145 m) were extracted from the front-line map. 31 contour lines take their height straight from 48 printed height labels. 71 more take theirs from the lines either side, rounded to the 10 m interval. Heights between contours are filled in smoothly from the lines alone. Height at Farbus comes out at 92 m; today's town hall stands at 90 m. Beyond the map's edges there is no contour data, so the edge heights are extended and the ground is shown faded. Map placement uses the 145 m summit (the Vimy Memorial) and five small villages; the big villages of Vimy and Neuville were left out because they don't pin to a single point. On the 1917 plan the Black Line runs 800–1,190 m beyond the German front, deeper than the \"about 700 yards\" in written summaries.<br><b>Schematic:</b> the German support trenches and communication trenches, the battery positions, the German battery count, the 4th Division's delay curve and the infantry spacing. The barrage timing is worked out from 100 yd per 3 minutes, not taken from the barrage table.<br>
+  <b>Traced:</b> the Canadian and German front lines come from the map "The Canadian and German Front Line Positions as at April 9th 1917". The objective lines, the Pimple operation, the corps boundaries, and the brigade assembly positions (division sectors are split midway between neighbouring brigades) come from "Map Illustrating Plan of Attack on Vimy Ridge, 9th April 1917". Both maps are reproduced on the RCR's Vimy pilgrimage pages. Each map was matched to modern coordinates using 8–9 villages; the leftover error is about 60–210 m, rising to about 340 m at the north edge. The brigade battalion lists come from the Canadian Corps dispositions table for zero hour. As a check, the Red Line passes 240 m from Hill 145.<br><b>Terrain:</b> the contour lines (10 m interval, 50–145 m) were extracted from the front-line map. 31 contour lines take their height straight from 48 printed height labels. 71 more take theirs from the lines either side, rounded to the 10 m interval. Heights between contours are filled in smoothly from the lines alone. Height at Farbus comes out at 92 m; today's town hall stands at 90 m. Beyond the map's edges there is no contour data, so the edge heights are extended and the ground is shown faded. The contour map's placement uses the 145 m summit (the Vimy Memorial) and five small villages; the big villages of Vimy and Neuville were left out because they don't pin to a single point. On the 1917 plan the Black Line runs 800–1,190 m beyond the German front, deeper than the "about 700 yards" in written summaries.<br><b>Schematic:</b> the German support trenches and communication trenches, the battery positions, the German battery count, the 4th Division's delay curve and the infantry spacing. The barrage timing is worked out from 100 yd per 3 minutes, not taken from the barrage table.<br>
   <b>Phase 2:</b> the advance times on the Red Line (06:45, 06:45, 07:30) come from the Corps dispositions table; the reported times come from the sources listed. The barrage rate after the Black Line is assumed to be 100 yd per 3 minutes, as in Phase 1. The shape of the 4th Division's line (12th Brigade slow, 87th Battalion held near its start line, 102nd Battalion forward), the machine-gun positions and the number of tracers are illustrative. The unshelled trench is placed about 70 m inside the German front line in front of the 87th, from "barely a hundred metres in front of them".<br>
   <b>Phase 3:</b> advance times (Blue 09:35 and 09:55, Brown 13:05 and 12:26) are from the 1917 dispositions tables; arrival times are from the 3rd and 27th Battalion war diaries and Nicholson. The Red, Blue and Brown Lines are matched point for point along their length, and the infantry and barrage move between them at 100 yd per 3 minutes (assumed). The 90-minute stand on the Blue Line is sourced. The three German batteries on the Farbus slope are illustrative positions; a battery counts as captured when the blue area reaches it.<br>
   <b>Phase 4:</b> the 85th Battalion's time (18:00) is from its battalion history; another account says early afternoon. The shape of its advance to the summit, the 10 April advance and the Pimple advance (100 yd per 3 minutes, assumed) are illustrative; the times, units, prisoners and losses are sourced. The short-round figures use this map's dispersion model.<br>
@@ -306,7 +306,7 @@ const fmt=n=>Math.round(n).toLocaleString('en-US');
 const dist=(ax,az,bx,bz)=>Math.hypot(ax-bx,az-bz);
 
 // ================= guns =================
-const SOURCES=[['Vimy: preparations for the attack (bombardment phases, raids, counter-battery) — canadahistory.ca','https://canadahistory.ca/sections/war/WW%20I/Vimy/Preparation.html'],['Royal Canadian Artillery Association — The First World War 1914–18','https://rca-arc.org/part0120-the-first-world-war-1914-18/'],['The National Archives (UK) — The Battle of Vimy Ridge: the assault','https://thediscoverblog.com/2017/04/12/the-battle-of-vimy-ridge-the-assault/'],
+const SOURCES=[['Vimy: preparations for the attack (bombardment phases, raids, counter-battery) — canadahistory.ca','https://canadahistory.ca/sections/war/WW%20I/Vimy/Preparation.html'],['Royal Canadian Artillery Association — The First World War 1914–18','https://rca-arc.org/part0120-the-first-world-war-1914-18/'],['Library and Archives Canada, The Discover Blog — The Battle of Vimy Ridge: the assault','https://thediscoverblog.com/2017/04/12/the-battle-of-vimy-ridge-the-assault/'],
  ['Battle of Vimy Ridge — Wikipedia','https://en.wikipedia.org/wiki/Battle_of_Vimy_Ridge'],
  ['The Battle of Vimy Ridge: preparations — The National Archives (UK) blog, with the period objective and barrage maps','https://blog.nationalarchives.gov.uk/battle-vimy-ridge-preparations'],
  ['Vimy pilgrimage maps (front lines on 9 April, plan of attack) — The RCR in the Great War','https://www.regimentalrogue.com/rcr_great_war/rcr_great_war_vimy_pilgrimage_maps.html'],
@@ -326,7 +326,7 @@ const SOURCES=[['Vimy: preparations for the attack (bombardment phases, raids, c
  ['Farbus coordinates — Wikipedia','https://en.wikipedia.org/wiki/Farbus'],
  ['Vimy Ridge Day (Red Line times on 9 April) — Wikipedia','https://en.wikipedia.org/wiki/Vimy_Ridge_Day'],
  ['The Battle of Vimy Ridge: the assault — The National Archives (UK) blog','https://blog.nationalarchives.gov.uk/battle-vimy-ridge-assault/'],
- ['87th Battalion (Canadian Grenadier Guards), CEF — Wikipedia','https://wikipedia.com/wiki/87th_Battalion,_CEF'],
+ ['87th Battalion (Canadian Grenadier Guards), CEF — Wikipedia','https://en.wikipedia.org/wiki/87th_Battalion,_CEF'],
  ['The Battle of Vimy Ridge, part 3 (the unshelled trench, 87th and 102nd casualties) — Esprit de Corps','https://esprit-de-corps.squarespace.com/history-feature/the-battle-of-vimy-ridge-part-3-canadian-corps-succeeds-where-others-had-failed'],
  ['"That day was like a scythe": Montreal and the casualty lists of Vimy Ridge (87th Bn, 520 men) — CBC','https://amp.cbc.ca/lite/story/1.4058385'],
  ['85th Battalion at Vimy — University of New Brunswick','https://www.unb.ca/initiatives/vimyridge/85th-battalion.html'],
@@ -618,7 +618,7 @@ const overlay=new THREE.Mesh(terrGeo,new THREE.MeshBasicMaterial({map:ovTex,tran
 let ovDirty=true,lastComp=0;
 let LOW=false; try{ LOW=localStorage.getItem('vimyLow')==='1'; }catch(e){}
 const UI={side:true,snow:true,obj:true,div:true,rings:false,cont:false,reach:false,heat:true,traj:true,barrB:false,sub:true,grid:true,lbl:true};
-const capC=document.createElement('canvas'); capC.width=OW; capC.height=OH;
+const capC=document.createElement('canvas'); capC.width=OW; capC.height=OH; capC.getContext('2d',{willReadFrequently:true});
 function composite(){ const c=ovC.getContext('2d'); c.clearRect(0,0,OW,OH); if(UI.side){ c.drawImage(sideC,0,0); c.globalCompositeOperation='destination-out'; c.drawImage(capC,0,0); c.globalCompositeOperation='source-over'; c.globalAlpha=0.17*255/255*0.9; c.drawImage(capC,0,0); c.globalAlpha=1; } if(typeof mineC!=='undefined') c.drawImage(mineC,0,0); if(UI.reach) c.drawImage(reachC,0,0); if(UI.heat) c.drawImage(heatC,0,0); ovTex.needsUpdate=true; ovDirty=false; }
 function recomputeReach(){ const c=reachC.getContext('2d'), img=c.createImageData(OW,OH), d=img.data;
   const live=batteries.filter(b=>b.alive()&&!b.suppressed).map(b=>[b.x,b.z,b.T.range**2,b.side==='A']);
@@ -841,7 +841,7 @@ const EVENTS2=[
  [7200,'07:30 — <b>The 2nd Division advances on the Red Line</b> (table time) towards Les Tilleuls. The 3rd Division reaches the Red Line at the western edge of the Bois de la Folie.'],
  [8400,'About 07:50 — The 2nd Division on the Red Line at Les Tilleuls in this simulation. <i>Sources differ: Wikipedia (after Campbell) has it reporting Les Tilleuls about 07:00, before the table\'s 07:30 start.</i>'],
  [12600,'09:00 — The 3rd Division learns its left flank is open: the 4th Division has not taken Hill 145. It forms a defensive flank facing north.'],
- [14100,'09:25 — The 1st Division reports all of its Red Line taken. End of Phase 2. Next: the 1st and 2nd Divisions go on to the Blue Line at 09:35 and 09:55, and the Brown Line after 13:00. Hill 145 falls to the 85th Battalion that evening. Choose <b>Phase 3</b> above to continue.'],
+ [14100,'09:25 — The 1st Division reports all of its Red Line taken. End of Phase 2. Next: the 1st and 2nd Divisions go on to the Blue Line at 09:35 (2nd Division) and 09:55 (1st Division), and the Brown Line from 12:26. Hill 145 falls to the 85th Battalion that evening. Choose <b>Phase 3</b> above to continue.'],
 ];
 // ---- Phase 3 band: the 2nd and 1st Divisions' ground between the Red, Blue and Brown Lines.
 // The three lines meet the southern corps boundary and the Red Line's eastern corner, so each is resampled by arc length and matched point for point.
@@ -944,13 +944,13 @@ const EVENTSP=[
 const EVENTSN=[
  [T_NIGHT0,'20:00, 8 April (Easter Sunday) — The assault battalions leave their huts and billets a few kilometres behind the line and march forward after dark. Routes are marked with luminous stakes. <i>Blue markers: the 21 assault battalions coming in from the western edge of the map, through the nearest subway, to their jumping-off positions. Routes, subway used and timings are illustrative; only the RCR\'s march is documented here.</i>'],
  [T_RCR,'20:45 — Battalions move up after dark on marked overland routes from the Arras–Béthune road. Example, the RCR war diary\'s march order (used on the nights of 5–7 April): leave the huts at Villers-au-Bois at 20:45, 500 yards between battalions, 100 yards between platoons.'],
- [T_BERTH,'22:00 — Across the front, battalions file through the subways to the front line (sources count 11 to 13 subways). The RCR used the Grange Subway, entered at Wedd Street; two of its companies were already inside by 7–8 April. <i>Blue dots: men moving through the subways (spacing illustrative).</i>'],
+ [T_BERTH,'22:00 — Across the front, battalions file through the subways to the front line (sources count 11 to 13 subways). The RCR used the Grange Subway, entered at Wedd Street; two of its companies were already inside by 7–8 April.'],
  [-16200,'About 01:00 — Patrols have cut lanes through the Canadian wire. Forward companies crawl out into shallow jumping-off ditches in no man\'s land, about 1 m deep. <i>Times between 22:00 and 04:00 are illustrative.</i>'],
  [T_INPOS,'04:00, 9 April — <b>Everyone is in position</b>, in places 100 yards from the German outposts, without being detected. Cloud cover helps. A north-west wind brings snow and sleet that will blow into the defenders\' faces.'],
  [-300,'05:25 — Five minutes to zero hour. Choose <b>Phase 1</b> above to continue.'],
 ];
 const EVENTSA=[
- [270000,'12 April — The Pimple is taken (time placed at 08:30; sources give the morning). The whole of Vimy Ridge is in Canadian hands.'],
+ [270000,'12 April — The Pimple is taken (time placed at 08:30; Corps hears just after 08:00 that the battalions are on their objectives). The whole of Vimy Ridge is in Canadian hands.'],
  [T_WD,'Night of 12–13 April — <b>The Germans withdraw</b> to their third position, the Oppy–Méricourt line and the Avion Switch around the western edge of Lens. They clear the villages of civilians and leave light rearguards and enough guns to make the front look normal. <i>Red dashed line: German third position (approximate).</i>'],
  [T_ADV,'Afternoon, 13 April — The withdrawal is discovered. An advance is ordered along the whole Corps front, down the ridge onto the Douai Plain.'],
  [397800,'Evening, 13 April — The Corps report on operations lists Thélus, Farbus, Givenchy, Willerval, Vimy and La Chaudière in Canadian hands and more than 4,000 prisoners taken since 9 April. <i>Time placed at 20:00; the report gives the day only.</i>'],
@@ -1018,7 +1018,7 @@ function cardX(id){
   if(id==='n2') return `<h3>Underground</h3><p>11 to 13 subways (sources differ), 265 m to 1.7 km long, run through the chalk from the support area to the front line. They are lit by electric light and lined with timber, with water and ammunition stored inside. Men file through them in single file, out of sight and out of the shelling.</p><p class="small">Turn on "Subways" in Display to see them. Walk one with Follow a man → "How they got there".</p>`;
   if(id==='n3') return `<h3>The jumping-off line</h3><p>Lanes have been cut through the Canadian wire. The first waves crawl into shallow ditches in no man's land, in places 100 yards from German sentries. By 04:00 everyone is in place. Then they wait, in sleet, for 05:30.</p>`;
   if(id==='a1') return `<h3>13 April · the Germans pull back</h3><p>With the ridge lost, the German command withdraws from the low ground below it to the third position: the Oppy–Méricourt line and the Avion Switch. Rearguards and a few guns stay behind to make the front look normal.</p><p class="small">German batteries west of the third position disappear from this map at midnight on 12–13 April.</p>`;
-  if(id==='a2') return `<h3>Down onto the Douai Plain</h3><p>The advance is ordered on the afternoon of 13 April. The villages below the ridge are taken over: Vimy, Willerval, Givenchy and La Chaudière, alongside Thélus and Farbus taken earlier.</p><table><tr><td>Prisoners, 9–13 April</td><td>more than 4,000</td></tr><tr><td>Guns taken</td><td>more than 60</td></tr></table>`;
+  if(id==='a2') return `<h3>Down onto the Douai Plain</h3><p>The advance is ordered on the afternoon of 13 April. The villages below the ridge are taken over: Vimy, Willerval, Givenchy and La Chaudière, alongside Thélus and Farbus taken earlier.</p><table><tr><td>Prisoners, 9–13 April</td><td>more than 4,000</td></tr><tr><td>Guns captured, 9–14 April</td><td>54</td></tr></table>`;
   return `<h3>14 April · the new front</h3><p>Patrols meet stiffening resistance at the Oppy–Méricourt line and the advance stops. The ridge, which the Germans had held since 1914, now gives the Canadians a view over the whole plain.</p><p class="small">The Canadian line of 14 April and the German third position are drawn approximately from village positions, not traced from a 1917 map.</p>`;
 }
 // ---- stepping between the parts of a phase, with a smooth slide of the lines and targets
@@ -1060,7 +1060,7 @@ function markCaptured(){ const c=capC.getContext('2d'); capData=c.getImageData(0
     const cap=c.getImageData(px,py,1,1).data[3]>0; if(cap!==!!b.captured){ b.captured=cap; b.disc.material.color.setHex(cap?0x8899bb:(b.suppressed?0x555555:COL.G)); b.updLabel(); if(cap) log(`${b.T.short} ${b.tag||'#'+b.num} captured.`); } } }
 function updatePhaseVisuals(force){ updExtraPhase();
   const key=PH.n+':'+Math.floor(tNow/30), BL=PH.extra?PH.extra(tNow):null;
-  if(force||key!==lastBarrKey){ lastBarrKey=key; barrMeshes.forEach(m=>{scene.remove(m); m.geometry.dispose();}); barrMeshes=[];
+  const nowR=performance.now(); if(force||(key!==lastBarrKey&&nowR-(window.__pvT||0)>250)){ lastBarrKey=key; window.__pvT=nowR; barrMeshes.forEach(m=>{scene.remove(m); m.geometry.dispose();}); barrMeshes=[];
     const fs=offSegs(CORPS_S0,CORPS_S1,p=>PH.barr(p,tNow)), hs=offSegs(CORPS_S0,CORPS_S1,p=>PH.barrH(p,tNow));
     if(BL){ fs.push(...BL.barr); hs.push(...BL.how); }
     fs.forEach(g=>barrMeshes.push(ribbon(g,30,0xffb347,0.42,0.8))); hs.forEach(g=>barrMeshes.push(ribbon(g,18,0xff7a30,0.28,0.8))); barrMeshes.forEach(m=>m.visible=UI.barrB); if(typeof FOL!=='undefined'&&FOL.hideOv) barrMeshes.forEach(m=>m.visible=false);
@@ -1151,7 +1151,7 @@ function gasCloud(x,z){ if(effects.length>480) return; const y=meshY(x,z); for(l
 function impact(sh){ if(sh.side==='A'&&!(sh.tgt&&sh.tgt.kind==='bat')){ HITS.push([sh.x1,sh.z1,performance.now()]); if(HITS.length>80) HITS.shift(); } if(sh.side==='A'&&sh.tgt&&sh.tgt.kind==='bat'&&(PH.n===1||PH.n===-1&&tNow>T_P2)&&Math.random()<0.4) gasCloud(sh.x1,sh.z1); if(sh.mdl&&sh.mdl.parent) sh.mdl.parent.remove(sh.mdl); if(sh.vis){ if(sh.vis.parent) sh.vis.parent.remove(sh.vis); sh.vis.material.dispose(); visCount--; } if(sh.arc){ sh.arc.geometry.setDrawRange(0,UI.traj?37:0); fading.push({l:sh.arc,t:0}); }
   const y=meshY(sh.x1,sh.z1); heatDot(sh.x1,sh.z1,sh.T); addXH(sh.x1,sh.z1); featuredImpact(sh);
   if(effects.length<(LOW?80:480)){ addFx(starTex,sh.x1*S,y+2,sh.z1*S,2.5,8+sh.T.cal/9,.12,1,'pop'); addShock(sh.x1*S,y+1,sh.z1*S,0.4+sh.T.cal/300,.22); if(!LOW) addFx(smokeTex,sh.x1*S,y+3,sh.z1*S,5+sh.T.cal/35,16+sh.T.cal/8,2.4,.7); } }
-function clearShells(){ shells.forEach(s=>{ if(s.mdl&&s.mdl.parent) s.mdl.parent.remove(s.mdl); if(s.vis&&s.vis.parent) s.vis.parent.remove(s.vis); if(s.arc) scene.remove(s.arc); }); shells=[]; visCount=0; fading.forEach(f=>scene.remove(f.l)); fading.length=0; effects.forEach(e=>{ if(e.sp.parent) e.sp.parent.remove(e.sp); }); effects.length=0; heatC.getContext('2d').clearRect(0,0,OW,OH); ovDirty=true; clearXH(); if(FP.stats) resetFeatured(); featAcc=0; }
+function clearShells(){ shells.forEach(s=>{ if(s.mdl&&s.mdl.parent) s.mdl.parent.remove(s.mdl); if(s.vis&&s.vis.parent) s.vis.parent.remove(s.vis); if(s.arc){ scene.remove(s.arc); s.arc.geometry.dispose(); s.arc.material.dispose(); } }); shells=[]; visCount=0; fading.forEach(f=>{ scene.remove(f.l); if(f.l.geometry) f.l.geometry.dispose(); }); fading.length=0; effects.forEach(e=>{ if(e.sp.parent) e.sp.parent.remove(e.sp); }); effects.length=0; heatC.getContext('2d').clearRect(0,0,OW,OH); ovDirty=true; clearXH(); if(FP.stats) resetFeatured(); featAcc=0; }
 
 // ================= order of battle (illustrative positions) =================
 function setupOOB(){
@@ -1248,7 +1248,7 @@ playB.onclick=()=>{ if(tNow>=PH.t1){ tNow=PH.t0; clearShells(); curShot=null; } 
 document.getElementById('tl').oninput=e=>{ curShot=null; frozen=null; tNow=u2t(+e.target.value); clearShells(); batteries.forEach(b=>{b.cool=Math.random()*10; b.target=null;}); updatePhaseVisuals(true); };
 function setPhase(n,quiet){ if(typeof setShotScene==='function') setShotScene(null); if(!PHASES[n]) n=1; PH=PHASES[n]; document.getElementById('phSel').value=n; tNow=PH.t0; playing=false; playB.textContent='▶ Play'; frozen=null; curShot=null;
   if(!quiet){ clearShells(); heatC.getContext('2d').clearRect(0,0,OW,OH); } ovDirty=true; batteries.forEach(b=>{b.cool=Math.random()*10; b.target=null;});
-  document.getElementById('phSub').textContent=PH.sub; document.getElementById('hDate').textContent={'-1':'20 March – 8 April 1917','0':'8–9 April 1917','4':'10–12 April 1917','5':'13–14 April 1917'}[n]||'9 April 1917'; jumpA=null; if(!tourOn) speed=userSpeed(); document.getElementById('evsum').textContent=`All events: ${PH.label}`; document.title='Vimy Ridge 1917 — '+PH.title;
+  document.getElementById('phSub').textContent=PH.sub; document.getElementById('hDate').textContent={'-1':'20 March – 8 April 1917','0':'8–9 April 1917','4':'9–12 April 1917','5':'13–14 April 1917'}[n]||'9 April 1917'; jumpA=null; if(!tourOn) speed=userSpeed(); document.getElementById('evsum').textContent=`All events: ${PH.label}`; document.title='Vimy Ridge 1917 — '+PH.title;
   renderEvents(); updatePhaseVisuals(true); renderCard(); if(!quiet) log(`${PH.label} loaded. Press ▶ Play or drag the timeline.`);
   try{ history.replaceState(null,'','#phase'+n); }catch(e){} }
 document.getElementById('phSel').onchange=e=>setPhase(+e.target.value);
@@ -1261,7 +1261,7 @@ const tog=(id,k,fn)=>document.getElementById(id).onchange=e=>{ UI[k]=e.target.ch
 tog('tObj','obj',()=>objGroup.forEach(m=>m.visible=UI.obj)); tog('tDiv','div',()=>divGroup.forEach(m=>m.visible=UI.div));
 tog('tRings','rings',()=>batteries.forEach(b=>b.buildRings())); tog('tCont','cont',()=>batteries.forEach(b=>b.buildRings()));
 tog('tSnow','snow',()=>snowPts.visible=UI.snow);
-document.getElementById('tLow').onchange=e=>{ LOW=e.target.checked; renderer.shadowMap.enabled=!LOW; scene.traverse(o=>{ if(o.material) [].concat(o.material).forEach(m=>m.needsUpdate=true); }); renderer.setPixelRatio(LOW?Math.min(1,devicePixelRatio):Math.min(2,devicePixelRatio)); renderer.setSize(innerWidth,innerHeight); try{ localStorage.setItem('vimyLow',LOW?'1':'0'); }catch(err){} };
+document.getElementById('tLow').onchange=e=>{ LOW=e.target.checked; renderer.shadowMap.enabled=!LOW; scene.traverse(o=>{ if(o.material) [].concat(o.material).forEach(m=>m.needsUpdate=true); }); renderer.setPixelRatio(LOW?Math.min(1,devicePixelRatio):Math.min(1.5,devicePixelRatio)); renderer.setSize(innerWidth,innerHeight); try{ localStorage.setItem('vimyLow',LOW?'1':'0'); }catch(err){} };
 tog('tReach','reach',()=>ovDirty=true); tog('tHeat','heat',()=>ovDirty=true); tog('tTraj','traj'); tog('tBarr','barrB',()=>barrMeshes.forEach(m=>m.visible=UI.barrB&&!(typeof FOL!=='undefined'&&FOL.hideOv)));
 tog('tSub','sub',()=>subGroup.forEach(m=>m.visible=UI.sub)); tog('tBn','bn',()=>{}); tog('tSub2','sub2'); UI.troop=false; UI.xh=false;  tog('tXh','xh'); UI.comm=false; tog('tComm','comm',()=>TRENCH3D.children.forEach(m=>{ if(m.userData.comm) m.visible=UI.comm; })); tog('tSide','side',()=>ovDirty=true); tog('tGrid','grid',()=>gridMesh.visible=UI.grid); tog('tLbl','lbl',()=>labelsEl.style.display=UI.lbl?'':'none');
 // ================= trench traces in 3D (seen when the camera is low): fire bays and traverses, chalk spoil, dark floor =================
@@ -1325,7 +1325,7 @@ const HITS=[];   // recent Allied shell strikes (not counter-battery), for the P
 // Phase 1 guided view: low over the Canadian lines, travelling up and down the corps front with the attacking troops in the middle of the frame
 const LINE={s:0,dir:-1};
 function lineFrame(){ const p=gfAt(LINE.s), o=PH.troop(p,tNow), d=(o===null?0:o)-20, x=p.x+p.nx*d, z=p.z+p.nz*d; return [x,z,-p.nx*420+p.nz*120,-p.nz*420-p.nx*120,330]; }
-// Phase 1 close shot on the RCR (showcase battalion): low behind its waves, moving with them
+// Phase 1 close shot on the RCR (battalion shown section by section): low behind its waves, moving with them
 function rcrFrame(){ const b=BNS.find(q=>q.show), g=gfAtI(bSm(b,0.5));
   if(PH.n!==1){ const c=(b.dc&&b.dcP===PH.n)?b.dc:(b.pos||[g.x,g.z]); return [c[0],c[1],-g.nx*280,-g.nz*280,150]; }
   const t=Math.max(0,tNow), o=showLead(b,t)-35, x=g.x+g.nx*o, z=g.z+g.nz*o; return [x,z,-g.nx*150+g.nz*70,-g.nz*150-g.nx*70,85]; }
@@ -1384,7 +1384,7 @@ const SUB=(()=>{ const men=[], coys=[];
 UI.sub2=true;
 // where along a battalion's frontage (u: 0–1 from its first to last point) a man stands, at a given offset back from the leading wave
 function bSm(b,u){ const L=b.seg.length-1, f=Math.max(0,Math.min(1,u))*L, i=Math.min(L-1,Math.floor(f)); return b.seg[i][2]+(b.seg[i+1][2]-b.seg[i][2])*(f-i); }
-// lead line of the showcase battalion: walks (1 m/s) to 45 m behind each barrage step, then waits for the next lift
+// lead line of the battalion shown section by section: walks (1 m/s) to 45 m behind each barrage step, then waits for the next lift
 function showLead(b,t){ if(b.gp===undefined){ let bi=0,bd=1e9; GFS.forEach((q,j)=>{ const d=Math.abs(q.s-b.s); if(d<bd){bd=d;bi=j;} }); b.gp=GFS[bi]; } const p=b.gp, dB=p.dB, F=x=>Math.min(dB,x), oJ=b.oJ===undefined?(b.oJ=polyInfo(GF,b.J[0],b.J[1]).d):b.oJ, k=Math.floor(t/180), Fk=F(barrageP1(t)-45), Fp=k===0?oJ:F(barrageP1(t-180)-45);
   return Fp+(Fk-Fp)*Math.min(1,(t-k*180)/Math.max(1,Math.abs(Fk-Fp)/1.0)); }
 function showPos(b,m,t){ if(!b.Wm){ const a=bnFramePt(b,0,0), c=bnFramePt(b,1,0); b.Wm=Math.hypot(a[0]-c[0],a[1]-c[1]); }
@@ -2217,7 +2217,7 @@ const MEN=[
    {ph:1,t:420,fromN:true,f:110,title:'Ahead of his company',pose:'stand',scene:{wire:-18,clear:[[8,0]]},mg:[8,0,false],
     text:'With only his two runners, MacDowell reaches the German position ahead of his company. He destroys one machine-gun nest and drives the crew away from a second. <i>Time not recorded; placed early in the attack.</i>',with:[['runner',-4,2,'aim'],['runner',-5,-2,'aim'],['germanflee',22,3,'walk'],['germanflee',24,-2,'walk']]},
    {ph:1,t:1100,from:110,f:330,title:'The tunnel',pose:'stand',scene:{trench:[[4.5,-30],[4.5,30]],craters:16,wrecked:true},dug:[3.7,0],cam:{a:-2.45,d:5.2,h:1.75,lookH:0.9,orbit:0.02,dolly:-0.05,fov:40},
-    text:'He sees a German soldier go into a tunnel and follows. Underground, he bluffs: he makes the Germans believe a much larger force is outside. Two officers and 75 men surrender. He sends them up in groups of 12, and his two runners take them back to the Canadian line. One prisoner realises they have been tricked, grabs a rifle and tries to shoot a runner; he is shot.',
+    text:'He sees a German soldier go into a tunnel and follows. Underground, he bluffs: he makes the Germans believe a much larger force is outside. Two officers and 75 men surrender. He sends them up in groups of 12, and his two runners take them back to the Canadian line. One prisoner realises they have been tricked, grabs a rifle and tries to shoot a runner and is shot.',
     with:[['runner',-2,-1.5,'aim'],...Array.from({length:12},(_,i)=>['prisoner',2.2-i*1.25,2.4+(i%2)*0.7,'handsup'])]},
    {ph:2,t:12600,f:330,title:'Five days',pose:'stand',scene:{trench:[[0,-30],[0,30]],craters:22,snow:true},
     text:'Wounded in the hand, MacDowell holds the position for five days under heavy shellfire until his battalion relieves him. He is awarded the Victoria Cross and promoted to major. His two runners each receive the Distinguished Conduct Medal.'}]},
@@ -2234,7 +2234,7 @@ const MEN=[
    {ph:4,t:50400,at:()=>HILL145,title:'Hill 145',pose:'stand',scene:{craters:30},mg:[6,4,false],
     text:'The summit is taken. About 20 prisoners, 3 of them officers. At least 3 machine guns captured. About 70 German soldiers and 2 officers are dead. The Vimy Memorial stands here today.',with:[['prisoner',5,-3,'handsup'],['prisoner',6,-4.5,'handsup'],['prisoner',4,-5.5,'handsup'],['rifle',3,-1.5,'aim']]}]},
  {id:'fortune',name:'Daniel Joseph Fortune',rank:'Private',unit:'85th Battalion (Nova Scotia Highlanders)',kind:'soldier',kit:'rifle',
-  facts:[['From','Sydney Mines, Cape Breton'],['Before the war','Miner'],['Enlisted','1915, aged 25'],['Grave','Lost. His name is on the Vimy Memorial']],
+  facts:[['From','Sydney Mines, Cape Breton'],['Before the war','Miner'],['Enlisted','1915, aged 25'],['Grave','No known grave. Named on the Vimy Memorial']],
   role:'A rifleman in one of the two companies that attack Hill 145. Until that evening his battalion has dug trenches and carried ammunition.',
   src:[['Soldier of Fortune: Private Daniel Joseph Fortune at Vimy Ridge — The Great War Centre','https://archive.greatwarcentre.com/?p=1797']],
   sOf:()=>S145-40,
@@ -2258,7 +2258,7 @@ const MEN=[
    {ph:1,t:260,from:30,f:50,title:'Until help came',pose:'down',scene:{clear:[[0,0]],craters:28},mg:[-3,-2,true],
     text:'A small German party attacks him. He holds them off with the bayonet and then with his rifle as a club until the rest of the company reaches him. He is killed in this fight. His Victoria Cross citation says his action saved many lives and helped the attack succeed.'}]},
  {id:'milne',name:'William Johnstone Milne',rank:'Private',unit:'16th Battalion (The Canadian Scottish) · 3rd Brigade · 1st Division',kind:'soldier',kit:'rifle',
-  facts:[['Born','21 December 1892, Cambusnethan, Scotland'],['Before the war','Emigrated 1910; farm worker near Moose Jaw, Saskatchewan; enlisted September 1915'],['At Vimy','Aged 24'],['Award','Victoria Cross (posthumous)'],['Grave','None found. Named on the Vimy Memorial']],
+  facts:[['Born','21 December 1892, Cambusnethan, Scotland'],['Before the war','Emigrated 1910; farm worker near Moose Jaw, Saskatchewan; enlisted September 1915'],['At Vimy','Aged 24'],['Award','Victoria Cross (posthumous)'],['Grave','No known grave. Named on the Vimy Memorial']],
   role:'A private rifleman. Riflemen also carried bombs (hand grenades) for clearing trenches and machine-gun posts.',
   src:[['William Johnstone Milne — Wikipedia','https://en.wikipedia.org/wiki/William_Johnstone_Milne']],
   sOf:()=>DIVS[3].s0+250,
@@ -2542,7 +2542,7 @@ function card2(id){
   if(id==='p2red') return `<h3>3rd Division · to the Bois de la Folie</h3><p>The camera stays on the RCR (7th Brigade), the battalion drawn section by section. The 7th and 8th Brigades go on behind the barrage (42nd Bn, PPCLI, RCR; 4th, 2nd and 1st CMR). Their Red Line runs along the western edge of the Bois de la Folie, which they reach about 07:30.</p><p class="small">Barrage rate for this phase is assumed to be the same 100 yd per 3 minutes as in Phase 1; no source found for a different rate.</p>`;
   if(id==='p2til') return `<h3>2nd Division · Les Tilleuls</h3><p>The 4th and 5th Brigades (20th, 21st, 22nd, 25th Bns) start for the Red Line at 07:30 by the table and take the hamlet of Les Tilleuls on the Arras–Lens road. To the south the 1st Division takes its Red Line; it reports all of it taken by 09:25.</p><p class="small">Sources differ on the 2nd Division's time: Wikipedia (after Campbell) has it at Les Tilleuls about 07:00.</p>`;
   if(id==='h145') return `<h3>Hill 145 · why the 4th Division stopped</h3>
-   <p>The commander of the 87th Battalion asked for a section of German trench to be left undamaged, so his men could use it after capture. The German machine guns in that trench survived. When the 87th climbed out at 05:30 (520 men in the first wave), most of the casualties came within minutes.</p>
+   <p>The commander of the 87th Battalion reportedly asked for a section of German trench to be left undamaged, so his men could use it after capture (the 4th Division's report calls it an error). The German machine guns in that trench survived. When the 87th climbed out at 05:30 (520 men in the first wave), most of the casualties came within minutes.</p>
    <table><tr><td>87th Bn, 9 April: killed</td><td class="red">7 officers, 149 men</td></tr><tr><td>87th Bn, 9 April: wounded</td><td>4 officers, 155 men</td></tr><tr><td>87th and 102nd Bns</td><td>over 300 casualties each by nightfall</td></tr></table>
    <p>The barrage moved on to its timetable and got too far ahead of the troops. Machine guns on the Pimple, to the north, fired into the division's flank.</p>
    <p class="small">Tracer lines show where the fire came from and where it fell. Their number and the gun positions are <i>illustrative</i>; the trench position is approximate.</p>`;
@@ -2561,7 +2561,7 @@ const SHOTS3=[
  {id:'p3end',t0:31200,t1:37801,speed:90,go(){ const p=bandMid(2,'br'); camTo(p[0],p[1]+300,-3000,2200,2000,3); }},
 ];
 function card3(id){ const cap=batteries.filter(b=>b.side==='G'&&b.captured).length;
-  if(id==='p3over') return `<h3>Phase 3 · Leapfrog</h3><p>The 3rd and 4th Divisions' final objective was the Red Line. The 1st and 2nd Divisions go on, two more lines, down the far side of the ridge. Fresh brigades pass through the tired ones on the Red Line: the British 13th Brigade and the 6th Canadian Brigade for the 2nd Division, the 1st Canadian Brigade for the 1st Division.</p><p class="small">Advance times are from your 1917 dispositions tables: Blue Line 09:35 and 09:55, Brown Line 13:05 and 12:26.</p>`;
+  if(id==='p3over') return `<h3>Phase 3 · Leapfrog</h3><p>The 3rd and 4th Divisions' final objective was the Red Line. The 1st and 2nd Divisions go on, two more lines, down the far side of the ridge. Fresh brigades pass through the tired ones on the Red Line: the British 13th Brigade and the 6th Canadian Brigade for the 2nd Division, the 1st Canadian Brigade for the 1st Division.</p><p class="small">Advance times are from the Canadian Corps dispositions tables: Blue Line 09:35 and 09:55, Brown Line 13:05 and 12:26.</p>`;
   if(id==='p3blue') return `<h3>Thélus and Hill 135</h3><p>The 2nd Division's objective on the Blue Line is the ruined village of Thélus and Hill 135 beside it, the second high point of the ridge. The 1st Brigade's Blue Line is 1,100 yards from its start.</p><p>A message timed 10:50 reports Thélus and Hill 135 taken (3rd Battalion war diary).</p><p class="small">Barrage rate assumed 100 yd per 3 minutes. At that rate the barrage reaches the Blue Line some minutes before the reported times.</p>`;
   if(id==='p3pause') return `<h3>90 minutes on the Blue Line</h3><p>The barrage stops and stands in front of the Blue Line for 90 minutes. Machine guns are carried forward so the new line can be held against a counter-attack. Then the barrage moves again for the last objective.</p><p>Planning a pause into the timetable was part of the Vimy method: each line was consolidated before the next leap.</p>`;
   if(id==='p3brown') return `<h3>Farbus Wood · the guns overrun</h3><p>From the Blue Line the ground falls sharply to Farbus Wood and the village of Farbus, with the flat Douai Plain beyond. German field batteries stood on this slope. Many could not be pulled back: the counter-battery fire and gas had killed their horses.</p>
@@ -2611,7 +2611,7 @@ function cardHTML(){
    <tr><td>Bursts within 5 / 10 / 25 m of a sentry</td><td>${F.near[0]} / ${F.near[1]} / ${F.near[2]}</td></tr>
    <tr><td>Sentries hit <i>(model)</i></td><td class="red">${F.hit} of 6</td></tr><tr><td>Dugout entrances blocked <i>(model)</i></td><td>${F.blocked} of 2</td></tr>
    <tr><td>Men in the dugout hurt <i>(model)</i></td><td>0 of 40</td></tr></table>
-   <p class="small">The plan wasn't to kill the men in the dugouts. It was to keep them underground until the Canadian infantry, following 90 m behind the barrage, were standing over the entrances. <i>Model rule:</i> a sentry is hit when a shell bursts within half its lethal radius, because the trench walls stop much of the blast. A 4.5-inch shell or heavier landing within 3 m of an entrance blocks it.</p>`;
+   <p class="small">The plan wasn't to kill the men in the dugouts. It was to keep them underground until the Canadian infantry, following about 45 m behind the barrage, were standing over the entrances. <i>Model rule:</i> a sentry is hit when a shell bursts within half its lethal radius, because the trench walls stop much of the blast. A 4.5-inch shell or heavier landing within 3 m of an entrance blocks it.</p>`;
   if(id==='fb'){ const n=b.nAlive(), rate=(n*b.T.cad).toFixed(1), r0=(B.start*b.T.cad).toFixed(1);
    return `<h3>German ${b.T.name} battery · Douai Plain</h3>
    <p>Each gun sits in a pit behind a sandbag wall, with a timber revetment holding up the sides. Near misses mostly hit sandbags. A gun is knocked out only by a shell landing inside its pit, about 5 m from the gun <i>(model)</i>. This battery is under counter-battery fire from 60-pounders and 9.2-inch howitzers.</p>
@@ -2621,7 +2621,7 @@ function cardHTML(){
    <tr><td>Battery output <i>(model)</i></td><td>${rate} rounds/min (started at ${r0})</td></tr>
    <tr><td>Gun crew hit <i>(model)</i></td><td>${B.crew} of ${FB.crew.length}</td></tr></table>
    <p class="small">On 9 April the heavy guns also fired gas shells at German battery positions. That killed the horses, so guns that survived often couldn't be moved. The Canadians captured 54 guns between 9 and 14 April.</p>`; }
-  if(id==='rcr') return `<h3>The RCR goes over</h3><p>The Royal Canadian Regiment (7th Brigade), drawn section by section. War diary: "the leading two companies in waves at 20 paces distance and three paces interval, the two rear companies following at 50 paces distance in Artillery formation in file."</p><p>Colours: <b style="color:#ffcf3f">bombers</b>, <b style="color:#c08cff">Lewis gun</b>, <b style="color:#7fb6ff">riflemen</b>, <b style="color:#66e08a">rifle-grenadiers</b>, <b style="color:#fff">moppers-up</b>. The waves walk to about 45 m behind the barrage and wait for each lift; moppers drop into each German trench as it is crossed. Speed slowed to 4×.</p>`;
+  if(id==='rcr') return `<h3>The RCR goes over</h3><p>The Royal Canadian Regiment (7th Brigade), drawn section by section. War diary: "the leading two companies in waves at 20 paces distance and three paces interval, the two rear companies following at 50 paces distance in Artillery formation in file."</p><p>Colours: <b style="color:#ffcf3f">bombers</b>, <b style="color:#c08cff">Lewis gun</b>, <b style="color:#7fb6ff">riflemen</b>, <b style="color:#66e08a">rifle-grenadiers</b>, <b style="color:#fff">moppers-up</b>. The waves walk to about 45 m behind the barrage and wait for each lift; moppers drop into each German trench as it is crossed. Playback slowed to 4× real time.</p>`;
   if(id==='adv') return `<h3>Over the top</h3><p>The camera travels along the corps front, about 330 m up, keeping the leading Canadian waves in the middle of the frame. </p><p>The barrage lifts 100 yards (91 m) every 3 minutes, and the infantry follow close behind it. Each crosshair marks where one shell landed. Look how widely the rounds scatter around the barrage line: the creeping barrage worked by sheer weight of shells, not by precision.</p>
    <table><tr><td>Sentries hit at the featured trench <i>(model)</i></td><td>${F.hit} of 6</td></tr><tr><td>Featured battery guns in action</td><td>${b.nAlive()} of ${B.start}</td></tr></table>`;
   return intendedHTML();
@@ -2703,7 +2703,7 @@ function loop(now){ if(!window.__ready){ window.__ready=1; setTimeout(()=>{ cons
     window.__fn=(window.__fn||0)+1; if(window.__fn%10===0) LODH.forEach(h=>{ const far=!window.__CSON&&camera.position.distanceTo(h.position)>160; if(far&&h.visible){ h.visible=false; h.userData.lodHid=true; } else if(!far&&h.userData.lodHid){ h.visible=true; h.userData.lodHid=false; } }); }
   { const hideOv=typeof FOL!=='undefined'&&FOL.hideOv; troopMeshes.forEach(m=>m.visible=UI.troop&&!hideOv); xhPts.visible=UI.xh||(tourOn&&!!curShot&&['adv','fp'].includes(curShot.id)); TRENCH3D.visible=camera.position.y<260; } skyDome.position.copy(camera.position); updSunShadow();
   for(let i=effects.length-1;i>=0;i--){ const e=effects[i]; e.t+=dt; e.fr=(e.fr||0)+1; const f=Math.min(e.fr<3?0.95:1,e.t/e.life); if(e.t>=e.life&&e.fr>=3){ if(e.sp.parent) e.sp.parent.remove(e.sp); e.sp.material.dispose(); effects.splice(i,1); continue; } if(e.mode==='pop'){ const s=f<0.12?e.s0+(e.s1-e.s0)*(f/0.12):e.s1*(1+0.08*(f-0.12)); e.sp.scale.set(s,s,1); e.sp.material.opacity=e.op*Math.pow(1-f,2.5); } else { const s=e.s0+(e.s1-e.s0)*Math.sqrt(f); e.sp.scale.set(s,s,1); e.sp.material.opacity=e.op*(1-f); } if(e.sp.material.map===smokeTex) e.sp.position.y+=dt*2.5; if(e.sp.material.map===gasTex){ e.sp.position.x+=dt*0.25; e.sp.position.z+=dt*0.25; } }
-  for(let i=fading.length-1;i>=0;i--){ const f=fading[i]; f.t+=dt; f.l.material.opacity=.28*(1-f.t/1.5); if(f.t>=1.5){ scene.remove(f.l); f.l.geometry.dispose(); fading.splice(i,1); } }
+  for(let i=fading.length-1;i>=0;i--){ const f=fading[i]; f.t+=dt; f.l.material.opacity=.28*(1-f.t/1.5); if(f.t>=1.5){ scene.remove(f.l); f.l.geometry.dispose(); f.l.material.dispose(); fading.splice(i,1); } }
   for(const b of batteries){ const d=window.__CSON&&b.trueScale?0:camera.position.distanceTo(b.group.position), f=b.trueScale&&d<120?1:Math.max(1,Math.min(16,d/35)); b.vf=f; b.disc.scale.setScalar(Math.max(.1,Math.min(1,d/2200))); b.disc.visible=d>60;
     for(const p of b.pieces){ const zz=p.oz*Math.min(4,f); p.mesh.scale.setScalar(f); p.mesh.position.set(0,meshY(b.x,b.z+zz)-meshY(b.x,b.z),zz*S); p.mesh.rotation.y=b.yaw;
       if(p.recoil>0) p.recoil=Math.max(0,p.recoil-dt*2.2); p.mesh.userData.barrel.userData.inner.position.x=-Math.sin(p.recoil*Math.PI)*.12*b.T.barrel[0]*S; } }
