@@ -2188,14 +2188,14 @@ function buildDiorama(cx,cz,dir,opt){ clearDiorama(); const G=new THREE.Group();
       const kind=k%4, obj=kind===0?propStump(seed+k):kind===1?propTimber(seed+k):kind===2?propIron(seed+k):propTimber(seed+k+1); obj.scale.setScalar(S);
       const x=cx+dx, z=cz+dz; obj.position.set(x*S,DIO.y(x,z)-0.05*S,z*S); obj.rotation.y=rnd(seed+k+500)*6.28; shadowAll(obj,true,true); G.add(obj); } }
   return G; }
-function groundMat(){ if(DIO.mat) return DIO.mat; const m=new THREE.MeshStandardMaterial({map:TEX.mud,roughnessMap:TEX.mudR,roughness:1,metalness:0,envMapIntensity:0.3}); m.polygonOffset=true; m.polygonOffsetFactor=-1; m.polygonOffsetUnits=-2;
-  if(!LOW_TEX){ m.normalMap=TEX.mudN; m.normalScale.set(0.55,0.55); }
+function groundMat(){ if(DIO.mat) return DIO.mat; const m=new THREE.MeshStandardMaterial({map:TEX.mud,roughnessMap:TEX.mudR,roughness:1,metalness:0,envMapIntensity:0.12}); m.polygonOffset=true; m.polygonOffsetFactor=-1; m.polygonOffsetUnits=-2;
+  if(!LOW_TEX){ m.normalMap=TEX.mudN; m.normalScale.set(0.3,0.3); }
   m.onBeforeCompile=sh=>{ sh.uniforms.chalkMap={value:TEX.chalk}; sh.uniforms.detail={value:TEX.detail};
     sh.vertexShader=sh.vertexShader.replace('void main() {','attribute vec3 aMix; attribute float aAO; varying vec3 vMix; varying float vAO;\nvoid main() {').replace('#include <begin_vertex>','#include <begin_vertex>\n vMix=aMix; vAO=aAO;');
     sh.fragmentShader=sh.fragmentShader.replace('void main() {','varying vec3 vMix; varying float vAO; uniform sampler2D chalkMap; uniform sampler2D detail;\nvoid main() {')
      .replace('#include <map_fragment>',`if(length(vUv*3.2)>41.4) discard; vec4 texelColor=0.6*texture2D(map,vUv)+0.4*texture2D(map,vec2(vUv.y,-vUv.x)*0.41+0.3); texelColor.rgb*=0.75+0.5*texture2D(detail,vUv*0.25).r; vec3 chc=texture2D(chalkMap,vUv*1.7).rgb; vec3 col=mix(texelColor.rgb,chc,vMix.x);
-       float pud=smoothstep(0.52,0.56,texture2D(detail,vUv*0.11+0.13).r*0.6+vMix.z*0.55)*(1.0-vMix.y); col*=0.62; col*=mix(1.0,0.55,vMix.z); col=mix(col,vec3(0.34,0.33,0.31),vMix.y*0.55); col=mix(col,col*0.35+vec3(0.03,0.028,0.022),pud); diffuseColor.rgb*=col*vAO;`)
-     .replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\n roughnessFactor=mix(roughnessFactor,0.3,vMix.z*0.8); { float pud=smoothstep(0.52,0.56,texture2D(detail,vUv*0.11+0.13).r*0.6+vMix.z*0.55)*(1.0-vMix.y); roughnessFactor=mix(roughnessFactor*0.75,0.04,pud); }'); };
+       float pud=smoothstep(0.52,0.56,texture2D(detail,vUv*0.11+0.13).r*0.6+vMix.z*0.55)*(1.0-vMix.y); col*=0.62; col*=mix(1.0,0.55,vMix.z); col=mix(col,vec3(0.24,0.22,0.2),vMix.y*0.45); col=mix(col,col*0.35+vec3(0.03,0.028,0.022),pud); diffuseColor.rgb*=col*vAO;`)
+     .replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\n roughnessFactor=max(0.9,roughnessFactor); { float pud=smoothstep(0.52,0.56,texture2D(detail,vUv*0.11+0.13).r*0.6+vMix.z*0.55)*(1.0-vMix.y); roughnessFactor=mix(roughnessFactor,0.08,smoothstep(0.7,1.0,pud)); }'); };
   return DIO.mat=m; }
 function waterMat(){ if(DIO.wmat) return DIO.wmat; const m=new THREE.MeshStandardMaterial({color:0x26231c,roughness:0.12,metalness:0.0,transparent:true,opacity:0.95,envMapIntensity:0.55});
   if(!LOW_TEX){ m.normalMap=TEX.waterN; m.normalScale.set(0.25,0.25); } return DIO.wmat=m; }
