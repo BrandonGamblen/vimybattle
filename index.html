@@ -1362,9 +1362,11 @@ function updBattalions(dt){ const show=UI.bn&&!(typeof FOL!=='undefined'&&FOL.ac
     if(show&&PH.n===0){ if(tNow>=b.t0) tgt=bnAlong(b,(tNow-b.t0)/(b.t1-b.t0)); }
     else if(show&&front){ if(rebuild||!b.ft){ let best=1e18; for(const q of BARR.troop){ const dx=q[0]-b.p.x, dz=q[1]-b.p.z, fw=dx*b.p.nx+dz*b.p.nz, side=Math.abs(-dx*b.p.nz+dz*b.p.nx); if(fw<-400) continue; const sc=side+Math.max(0,-fw); if(sc<best){ best=sc; b.ft=[q[0]-b.p.nx*60,q[1]-b.p.nz*60]; } } if(best>400) b.ft=offPt(b.s,-120); } tgt=b.ft; }
     if(!tgt){ b.vis.visible=false; b.pos=null; b.ft=rebuild?null:b.ft; continue; }
-    if(!b.pos||jumpA||!playing) b.pos=tgt.slice(); else if(front){ const dx=tgt[0]-b.pos[0], dz=tgt[1]-b.pos[1], d=Math.hypot(dx,dz), mx=1.2*dt*speed; if(d<=mx) b.pos=tgt.slice(); else { b.pos[0]+=dx/d*mx; b.pos[1]+=dz/d*mx; } } else { const k=Math.min(1,dt*3); b.pos[0]+=(tgt[0]-b.pos[0])*k; b.pos[1]+=(tgt[1]-b.pos[1])*k; }   /* in the attack the men walk, about 1.2 m/s, to each new barrage line: 91 m takes about 75 s of battle time */
-    const y=meshY(b.pos[0],b.pos[1]), d=camera.position.distanceTo(vt.set(b.pos[0]*S,y,b.pos[1]*S)), h=Math.max(1.2,d*0.024);
-    b.vis.scale.set(h*1.54,h,1); b.vis.position.set(b.pos[0]*S,y+h*0.62,b.pos[1]*S); b.vis.visible=true; } }
+    if(tgt&&b.show&&PH.n===1&&tNow>=0){ const g=gfAtI(bSm(b,0.5)), o=showLead(b,tNow)-70; tgt=[g.x+g.nx*o,g.z+g.nz*o]; b.pos=tgt.slice(); }   /* the RCR marker sits on its men, who follow their own timetable */
+    else if(!b.pos||jumpA||!playing) b.pos=tgt.slice(); else if(front){ const dx=tgt[0]-b.pos[0], dz=tgt[1]-b.pos[1], d=Math.hypot(dx,dz), mx=1.2*dt*speed; if(d<=mx) b.pos=tgt.slice(); else { b.pos[0]+=dx/d*mx; b.pos[1]+=dz/d*mx; } } else { const k=Math.min(1,dt*3); b.pos[0]+=(tgt[0]-b.pos[0])*k; b.pos[1]+=(tgt[1]-b.pos[1])*k; }   /* in the attack the men walk, about 1.2 m/s, to each new barrage line: 91 m takes about 75 s of battle time */
+    const mk=(b.dc&&b.dcP===PH.n&&Math.abs(b.dcT-tNow)<900)?b.dc:b.pos;   /* the flag stands on the battalion's drawn men when they are shown */
+    const y=meshY(mk[0],mk[1]), d=camera.position.distanceTo(vt.set(mk[0]*S,y,mk[1]*S)), h=Math.max(1.2,d*0.024);
+    b.vis.scale.set(h*1.54,h,1); b.vis.position.set(mk[0]*S,y+h*0.62,mk[1]*S); b.vis.visible=true; } }
 // ================= companies and platoons: how a battalion fills its frontage (shown when the camera is low) =================
 // Each battalion: 4 companies (A–D) of 4 platoons; about 30 men per platoon go forward. Layout used here (illustrative, after SS 143 and
 // battalion orders of the kind quoted by the 54th Bn war diary, "four waves"): A and B companies side by side in front, each with two platoons
@@ -1469,6 +1471,9 @@ function updFight(dt){ const F=FIGHT, P=F.p.geometry.attributes.position, C=F.p.
   P.needsUpdate=true; C.needsUpdate=true; }
 var capVer=0;
 // the troop line point at front distance s (for 13–14 April, when the line runs across the plain)
+// keep a man at least 5 m behind the troop line (the battalion's frame is straight, the line it has reached is not)
+function behindLine(b,x,z){ const T=BARR.troop; if(!T.length||!b.pos) return [x,z]; if(b.tqK!==T||Math.hypot(b.pos[0]-b.tqP[0],b.pos[1]-b.tqP[1])>40){ b.tqK=T; b.tqP=b.pos.slice(); b.tq=T.filter(q=>Math.hypot(q[0]-b.pos[0],q[1]-b.pos[1])<1500); if(!b.tq.length) b.tq=T; }
+  let best=null,bd=1e18; for(const q of b.tq){ const d=(q[0]-x)**2+(q[1]-z)**2; if(d<bd){bd=d;best=q;} } if(!best) return [x,z]; const a=(x-best[0])*best[3]+(z-best[1])*best[4]; if(a>-5){ const k=a+5; return [x-best[3]*k,z-best[4]*k]; } return [x,z]; }
 function troopAtB(b,u){ const V=BARR.troop, c=b.pos||[b.p.x,b.p.z]; if(b.l5f!==tNow||b.l5k!==V){ b.l5f=tNow; b.l5k=V; let bi=0,bd=1e18; V.forEach((q,k)=>{ const d=(q[0]-c[0])**2+(q[1]-c[1])**2; if(d<bd){bd=d;bi=k;} }); b.l5q=V[bi];
     if(!b.Wm){ const a=bnFramePt(b,0,0), e=bnFramePt(b,1,0); b.Wm=Math.hypot(a[0]-e[0],a[1]-e[1]); } }
   const nx=b.p.nx, nz=b.p.nz, w=(u-0.5)*b.Wm, ox=c[0]+b.p.nx*60, oz=c[1]+b.p.nz*60; return [ox+nz*w, oz-nx*w, 0, nx, nz]; }   /* 13–14 April: the men stand in a loose line along the new front, centred on their battalion */
@@ -1513,6 +1518,7 @@ function updSubUnits(){ const camY=camera.position.y, on=UI.bn&&UI.sub2&&camY<70
     if(kk<1){ x=m.wx+(x-m.wx)*kk; z=m.wz+(z-m.wz)*kk; }
     if(b.cons>0.01&&b.T1!==null){ const L=b.seg.length-1, f=m.u*L, ii=Math.min(L-1,Math.floor(f)), sm=b.seg[ii][2]+(b.seg[ii+1][2]-b.seg[ii][2])*(f-ii), gp=gfAt(sm), T=(m.off>-60?b.T1:b.T2)+((Math.floor(sm/9))%2?3:-3)+m.j*0.4;
       const cx=gp.x+gp.nx*T, cz=gp.z+gp.nz*T; x+=(cx-x)*b.cons; z+=(cz-z)*b.cons; }
+    if(PH.n>=1&&PH.n<=4&&(tNow>=0||PH.n>1)){ for(let it=0;it<3;it++){ const c=behindLine(b,x,z); if(c[0]===x&&c[1]===z) break; x=c[0]; z=c[1]; } }   /* nobody stands beyond the line his side has reached (re-checked: the nearest line point can change after a move) */
     dAc(b,x,z,m);
     if(figOn&&FIGS.A.count<FIG_MAX&&(x*S-tgt.x)**2+(z*S-tgt.z)**2<R2){ putFig(FIGS.A,x,z,b.p.nx,b.p.nz,kk<0.5,k,b.show?roleOf(m):0); P.setXYZ(i,0,-999,0); any=true; return; }
     P.setXYZ(i,x*S,meshY(x,z)+0.3,z*S); any=true; });
