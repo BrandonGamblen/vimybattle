@@ -68,6 +68,7 @@ a{color:#c9b27a}
 #card h3{font-family:'IM Fell English SC',serif;font-weight:400;font-size:16px;margin:0 0 2px;color:#f2e6c4}
 #card{padding:6px 12px;font-size:12px;line-height:1.38}#card p{margin:2px 0}#card table{margin:2px 0}#card #cardCont{position:sticky;float:right;top:0;margin:0 0 2px 8px!important;padding:2px 8px}
 #phase.collapsed{top:10px;bottom:auto}
+@media (max-width:1400px){ #phase .row.keep{flex-wrap:wrap;row-gap:4px} #play{white-space:nowrap} }
 @media (max-width:900px){ #phase{left:6px;right:6px;bottom:6px;padding:7px 34px 7px 9px} #card{left:6px!important;right:6px!important;top:58px} .panel{max-width:calc(100vw - 16px)} #left{top:6px;left:6px;bottom:auto;max-height:72vh} #right{top:6px;right:6px;bottom:auto;max-height:72vh;width:min(330px,calc(100vw - 16px))} #left.collapsed{max-width:46vw} #right.collapsed{max-width:46vw} select,input[type=range]{font-size:16px} .tg{min-width:32px;min-height:32px} #zban{max-width:calc(100vw - 20px)} #evt{max-height:20vh;overflow-y:auto} #card{max-height:96px} #left.collapsed,#right.collapsed{max-height:46px} #left.collapsed h1{font-size:17px} #slow{top:auto!important;bottom:45vh} }
 #card.more{box-shadow:inset 0 -18px 12px -8px rgba(0,0,0,.6)}#card.more::after{content:'▾ more — click to expand';position:sticky;bottom:0;float:right;font-size:11px;color:#c8b483;background:rgba(20,18,12,.9);padding:0 6px;border-radius:3px}#card.open{max-height:65vh!important}#card.open::after{content:'▴ click to shrink'}#card{cursor:pointer}
 #scaleBar{position:fixed;right:362px;bottom:14px;z-index:5;pointer-events:none;font:12px/1.2 'Inter',system-ui,sans-serif;color:#f2e6c4;text-shadow:0 1px 2px #000,0 0 3px #000;text-align:center}#sbBar{height:7px;border:2px solid #f2e6c4;border-top:none;box-shadow:0 1px 2px #000;margin:0 auto 3px}body.cine #scaleBar{display:none}
@@ -124,7 +125,7 @@ body.cine.tour #phase{display:block!important;top:8vh;bottom:auto;left:22vw;righ
     <label><input type="checkbox" id="tObj" checked>Objective lines</label>
     <label><input type="checkbox" id="tDiv" checked>Divisions</label>
     <label><input type="checkbox" id="tRings">Gun ranges</label>
-    <label><input type="checkbox" id="tCont">Accuracy contours</label>
+    <label title="Shown with Gun ranges on, or for a selected battery"><input type="checkbox" id="tCont">Accuracy contours</label>
     <label><input type="checkbox" id="tReach">Reach overlap</label>
     <label><input type="checkbox" id="tHeat" checked>Shell impacts</label>
     <label><input type="checkbox" id="tTraj" checked>Trajectories</label>
@@ -1260,8 +1261,8 @@ function setPhase(n,quiet){ if(typeof setShotScene==='function') setShotScene(nu
 document.getElementById('phSel').onchange=e=>{ setPhase(+e.target.value); if(tourOn){ const sh=shotAt(tNow); if(sh){ curShot=sh; sh.go(); renderCard(); } } };
 document.getElementById('prevB').onclick=()=>goPart(-1); document.getElementById('nextB').onclick=()=>goPart(1);
 addEventListener('keydown',e=>{ if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT'||(selected&&selected.mission==='manual')) return; if(e.key==='ArrowRight'){ goPart(1); e.preventDefault(); } else if(e.key==='ArrowLeft'){ goPart(-1); e.preventDefault(); } });
-const userSpeed=()=>+document.getElementById('spd').value*(PH.spdMul||1);
-document.getElementById('spd').onchange=e=>{ if(!tourOn) speed=userSpeed(); };
+const userSpeed=()=>{ const v=+document.getElementById('spd').value; return v===1?1:v*(PH.spdMul||1); };   /* 1× is true real time in every phase */
+document.getElementById('spd').onchange=e=>{ if(tourOn) releaseTour(); speed=userSpeed(); };   /* choosing a speed hands the camera back, otherwise the guided shots would override it */
 const obs=document.getElementById('obs'); obs.oninput=()=>{ OBS=obs.value/100; document.getElementById('obsv').textContent=OBS.toFixed(2); batteries.forEach(b=>b.buildRings()); renderSel(); drawAim(); };
 const tog=(id,k,fn)=>document.getElementById(id).onchange=e=>{ UI[k]=e.target.checked; fn&&fn(); };
 tog('tObj','obj',()=>objGroup.forEach(m=>m.visible=UI.obj)); tog('tDiv','div',()=>divGroup.forEach(m=>m.visible=UI.div));
