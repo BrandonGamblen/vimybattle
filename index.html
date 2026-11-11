@@ -68,6 +68,7 @@ a{color:#c9b27a}
 #card h3{font-family:'IM Fell English SC',serif;font-weight:400;font-size:16px;margin:0 0 2px;color:#f2e6c4}
 #card{padding:6px 12px;font-size:12px;line-height:1.38}#card p{margin:2px 0}#card table{margin:2px 0}#card #cardCont{position:sticky;float:right;top:0;margin:0 0 2px 8px!important;padding:2px 8px}
 #phase.collapsed{top:10px;bottom:auto}
+@media (max-width:900px){ #phase{left:6px;right:6px;bottom:6px;padding:7px 34px 7px 9px} #card{left:6px!important;right:6px!important;top:58px} .panel{max-width:calc(100vw - 16px)} #left{top:6px;left:6px;bottom:auto;max-height:72vh} #right{top:6px;right:6px;bottom:auto;max-height:72vh;width:min(330px,calc(100vw - 16px))} #left.collapsed{max-width:46vw} #right.collapsed{max-width:46vw} select,input[type=range]{font-size:16px} .tg{min-width:32px;min-height:32px} #zban{max-width:calc(100vw - 20px)} #evt{max-height:20vh;overflow-y:auto} #card{max-height:96px} #left.collapsed,#right.collapsed{max-height:46px} #left.collapsed h1{font-size:17px} #slow{top:auto!important;bottom:45vh} }
 #card.more{box-shadow:inset 0 -18px 12px -8px rgba(0,0,0,.6)}#card.more::after{content:'▾ more — click to expand';position:sticky;bottom:0;float:right;font-size:11px;color:#c8b483;background:rgba(20,18,12,.9);padding:0 6px;border-radius:3px}#card.open{max-height:65vh!important}#card.open::after{content:'▴ click to shrink'}#card{cursor:pointer}
 #scaleBar{position:fixed;right:362px;bottom:14px;z-index:5;pointer-events:none;font:12px/1.2 'Inter',system-ui,sans-serif;color:#f2e6c4;text-shadow:0 1px 2px #000,0 0 3px #000;text-align:center}#sbBar{height:7px;border:2px solid #f2e6c4;border-top:none;box-shadow:0 1px 2px #000;margin:0 auto 3px}body.cine #scaleBar{display:none}
 #card p{margin:5px 0}#card table td:first-child{width:62%}
@@ -2686,7 +2687,7 @@ function updScale(){ if(++sbF%6) return; const el=document.getElementById('scale
   _sa.copy(controls.target).project(camera); _sb.copy(controls.target).addScaledVector(_sr,L*S).project(camera); let px=Math.abs(_sb.x-_sa.x)*innerWidth/2, n=1;
   while(px*n<40&&n<10) n=n===1?2:n===2?5:10; let sub=1; if(L===100) while(px*sub>260&&sub>0.1) sub=sub===1?0.5:sub===0.5?0.2:0.1;
   document.getElementById('sbBar').style.width=Math.round(px*n*sub)+'px'; document.getElementById('sbTxt').textContent=sub<1?Math.round(100*sub)+' m':(L===100?(n===1?'100 m':(100*n)+' m'):(n===1?'1 km':n+' km'))+(n===1?' = one grid square':''); }
-function loop(now){ if(!window.__ready){ window.__ready=1; setTimeout(()=>{ const b=document.getElementById('introGo'); if(b){ b.disabled=false; b.textContent='Start'; } },0); } const rdt=Math.max(0,(now-last)/1000), dt=Math.min(.1,rdt); last=now; updScale(); if(rdt<1) fpsWatch(rdt); if(jumpA){ playing=false; stepJump(dt); }
+function loop(now){ if(!window.__ready){ window.__ready=1; setTimeout(()=>{ const b=document.getElementById('introGo'); if(b){ b.disabled=false; b.textContent='Start'; } },0); } const rdt=Math.max(0,(now-last)/1000), dt=Math.min(.1,rdt); last=now; updScale(); fpsWatch(Math.min(rdt,5)); if(jumpA){ playing=false; stepJump(dt); }
   if(tourOn&&!frozen&&playing){ const sh0=shotAt(tNow); if(sh0!==curShot){ curShot=sh0; sh0.go(); speed=sh0.speed; focusFB=(sh0.id==='fb'); setShotScene(PH.n===1?sh0.id:null); } }
   else if(!tourOn) focusFB=false;
   if(playing){ let sdt=dt*speed;
@@ -2746,6 +2747,8 @@ document.querySelectorAll('#left,#right,#caption,#phase').forEach(p=>{
   b.onclick=()=>{ const c=p.classList.toggle('collapsed'); b.textContent=c?'▸':'▾'; b.setAttribute('aria-expanded',c?'false':'true'); placeCard(); };
   p.appendChild(b);
 });
+// small screens (phones, tablets in portrait): the side panels start folded so the map and the time bar are usable
+if(innerWidth<900) ['left','right'].forEach(id=>{ const p=document.getElementById(id), b=p&&p.querySelector(':scope > .tg'); if(b&&!p.classList.contains('collapsed')) b.click(); });
 document.getElementById('tLow').checked=LOW; if(LOW) renderer.setPixelRatio(Math.min(1,devicePixelRatio));
 setupOOB(); buildFP(); buildFB(); buildH145(); recomputeReach(); { const m=location.hash.match(/#phase(-?\d)/); setPhase(m?+m[1]:-1); camTo(-1000,2600,-900,5800,7800,0.01); }   // opening view: high over Écurie, looking north-east along the front
 requestAnimationFrame(loop);
